@@ -216,12 +216,29 @@ function selectDate(btn, dateStr, dow) {
 
 function buildTimeGrid() {
   var grid = document.getElementById('time-grid');
-  var start = state.config.time_start || '13:00';
-  var end = state.config.time_end || '20:00';
   var interval = Number(state.config.time_interval) || 30;
-  var sh = parseInt(start.split(':')[0]), sm = parseInt(start.split(':')[1]);
-  var eh = parseInt(end.split(':')[0]), em = parseInt(end.split(':')[1]);
-  var startMin = sh * 60 + sm, endMin = eh * 60 + em;
+
+  // Google Sheets 可能把時間存成小數（例如 0.541667 代表 13:00）
+  // 需要處理字串格式 "13:00" 和數字格式兩種情況
+  function toMinutes(val) {
+    if (typeof val === 'string' && val.indexOf(':') !== -1) {
+      var parts = val.split(':');
+      return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    }
+    if (typeof val === 'number' && val < 1) {
+      // Sheets 時間小數：0 = 00:00, 0.5 = 12:00, 1 = 24:00
+      return Math.round(val * 24 * 60);
+    }
+    return 13 * 60; // 預設 13:00
+  }
+
+  var startMin = toMinutes(state.config.time_start);
+  var endMin   = toMinutes(state.config.time_end);
+
+  // 防呆：若解析結果不合理，用預設值
+  if (startMin < 0 || startMin > 1440) startMin = 13 * 60;
+  if (endMin   < 0 || endMin   > 1440) endMin   = 20 * 60;
+
   grid.innerHTML = '';
   for (var m = startMin; m <= endMin; m += interval) {
     var hh = String(Math.floor(m/60)).padStart(2,'0');
