@@ -307,7 +307,7 @@ function buildAdminDates(config) {
     const d = new Date(now);
     d.setDate(now.getDate() + i);
     if (!openDays.includes(d.getDay())) continue;
-    const dateStr = `${d.getMonth()+1}/${d.getDate()}（週${days[d.getDay()]}）`;
+    const dateStr = `${d.getMonth()+1}/${d.getDate()} （週${days[d.getDay()]}）`;
     adminDates.push(dateStr);
     const idx = count;
     const btn = document.createElement('div');

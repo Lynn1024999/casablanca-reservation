@@ -205,7 +205,7 @@ function buildDateGrid() {
 function selectDate(btn, dateStr, dow) {
   document.querySelectorAll('.date-btn').forEach(function(b) { b.classList.remove('selected'); });
   btn.classList.add('selected');
-  state.selectedDate = dateStr + '（週' + dow + '）';
+  state.selectedDate = dateStr + ' （週' + dow + '）';
   buildTimeGrid();
   document.getElementById('time-card').style.display = 'block';
   document.getElementById('pax-card').style.display = 'none';
