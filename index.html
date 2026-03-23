@@ -649,20 +649,6 @@
     margin: 28px 0;
   }
 
-  /* Demo hint */
-  .demo-hint {
-    position: fixed;
-    bottom: 70px;
-    right: 16px;
-    background: var(--dark);
-    color: white;
-    padding: 8px 14px;
-    border-radius: 20px;
-    font-size: 11px;
-    opacity: .8;
-    pointer-events: none;
-    z-index: 200;
-  }
 
   .progress-bar {
     display: flex;
@@ -704,10 +690,7 @@
 
 <nav class="top-nav">
   <div class="logo">卡薩布蘭加 · 人文咖啡館</div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchView('customer')">顧客預約</button>
-    <button class="nav-tab" onclick="switchView('admin')">店家後台</button>
-  </div>
+  
 </nav>
 
 <!-- ═══════════════════════════════════════
@@ -754,7 +737,24 @@
       </div>
       <div class="form-group">
         <label class="form-label">電話號碼 或 Email</label>
-        <input class="form-input" id="lookup-input" type="text" placeholder="0912-345-678 或 email@example.com">
+        <input class="form-input" id="lookup-input" type="text" placeholder="請輸入電話號碼或 Email">
+        <div style="margin-top:8px;padding:10px 12px;background:var(--cream);border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--soft);margin-bottom:6px;letter-spacing:.5px;">填寫格式範例</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;color:var(--mid);min-width:48px;">電話</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <code style="font-size:12px;background:white;border:1px solid var(--border);padding:2px 7px;border-radius:4px;color:var(--dark);">0912345678</code>
+                <span style="font-size:11px;color:var(--soft);align-self:center;">或</span>
+                <code style="font-size:12px;background:white;border:1px solid var(--border);padding:2px 7px;border-radius:4px;color:var(--dark);">0912-345-678</code>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;color:var(--mid);min-width:48px;">Email</span>
+              <code style="font-size:12px;background:white;border:1px solid var(--border);padding:2px 7px;border-radius:4px;color:var(--dark);">example@gmail.com</code>
+            </div>
+          </div>
+        </div>
       </div>
       <button class="btn-lookup" onclick="lookupMember()">🔍 查詢會員資料</button>
 
@@ -925,95 +925,37 @@
 
 </div><!-- /view-customer -->
 
-
-<!-- ═══════════════════════════════════════
-     ADMIN VIEW
-═══════════════════════════════════════ -->
-<div id="view-admin" class="view">
-<div class="admin-wrap">
-
-  <div class="admin-header">
-    <div>
-      <div class="admin-title">店家管理後台</div>
-      <div class="admin-subtitle">預約統計 · 備料清單 · 會員紀錄</div>
-    </div>
-    <button class="csv-btn" onclick="exportCSV()">⬇ 匯出 CSV</button>
-  </div>
-
-  <!-- Stats -->
-  <div class="stat-grid">
-    <div class="stat-card">
-      <div class="s-label">本週預約</div>
-      <div><span class="s-value" id="stat-week">12</span><span class="s-unit">筆</span></div>
-      <div class="s-sub">↑ 較上週 +3</div>
-    </div>
-    <div class="stat-card">
-      <div class="s-label">今日來客</div>
-      <div><span class="s-value" id="stat-today">18</span><span class="s-unit">人</span></div>
-    </div>
-    <div class="stat-card">
-      <div class="s-label">飲品需備</div>
-      <div><span class="s-value">23</span><span class="s-unit">份</span></div>
-      <div class="s-sub">今日合計</div>
-    </div>
-    <div class="stat-card">
-      <div class="s-label">餐點需備</div>
-      <div><span class="s-value">11</span><span class="s-unit">份</span></div>
-      <div class="s-sub">含能量球</div>
+<div style="max-width:640px;margin:0 auto 40px;padding:0 16px;">
+  <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:24px;text-align:center;">
+    <div style="font-family:'Noto Serif TC',serif;font-size:15px;letter-spacing:3px;color:var(--dark);margin-bottom:14px;">卡薩布蘭加 人文咖啡館</div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--mid);">
+      <div style="display:flex;align-items:flex-start;justify-content:center;gap:6px;">
+        <span style="color:var(--soft);white-space:nowrap;">營業時間｜</span>
+        <span>周三～五 13:00–21:00<br><span style="font-size:12px;color:var(--soft);">（周末不定時舉辦人文講座）</span></span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span style="color:var(--soft);white-space:nowrap;">聯絡方式｜</span>
+        <a href="https://line.me/R/ti/p/@580fsgxh" target="_blank"
+           style="color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold-light);">
+          按我 加入官方 Line
+        </a>
+      </div>
+      <div style="display:flex;align-items:flex-start;justify-content:center;gap:6px;">
+        <span style="color:var(--soft);white-space:nowrap;">地　　址｜</span>
+        <a href="https://www.google.com/maps/place/103台北市大同區重慶北路一段88號" target="_blank"
+           style="color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold-light);">
+          台北市大同區重慶北路一段 88 號 2 樓
+        </a>
+      </div>
     </div>
   </div>
-
-  <!-- Date tabs -->
-  <div class="date-tabs" id="admin-date-tabs"></div>
-
-  <!-- Reservation list -->
-  <div class="section-title">
-    <span id="admin-date-label">預約清單</span>
-  </div>
-  <div class="res-list" id="admin-res-list"></div>
-
-  <div class="section-divider"></div>
-
-  <!-- Supply list -->
-  <div class="section-title">
-    <span>備料清單（<span id="supply-date-label">選定日期</span>）</span>
-  </div>
-  <div class="supply-grid" id="supply-grid"></div>
-
-  <div class="section-divider"></div>
-
-  <!-- Member history -->
-  <div class="section-title">
-    <span>會員預約歷史</span>
-  </div>
-  <div style="background:white;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);">
-    <table class="history-table" id="history-table">
-      <thead>
-        <tr>
-          <th>姓名</th>
-          <th>日期</th>
-          <th>時段</th>
-          <th>人數</th>
-          <th>飲品</th>
-          <th>餐點</th>
-          <th>備註</th>
-        </tr>
-      </thead>
-      <tbody id="history-tbody"></tbody>
-    </table>
-  </div>
-
 </div>
-</div><!-- /view-admin -->
-
-<div class="demo-hint">Demo 原型 · 資料為示範用途</div>
-
 
 <script>
 // ══════════════════════════════════════════════════════════
 //  設定：部署後將 YOUR_SCRIPT_URL 換成實際的 Apps Script URL
 // ══════════════════════════════════════════════════════════
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkmtjTY17bFra0Q4dX4JGjbVUW4f6G1FPSCNbxttPJH3kD7tjuhxLA34XMF7_qMqtrFA/exec';
+const SCRIPT_URL = 'YOUR_SCRIPT_URL_HERE';
 
 // API 呼叫工具
 async function api(action, params = {}) {
@@ -1089,7 +1031,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   buildDateGrid();
   buildMenus();
-  buildAdminDates();
+
 
   const input = document.getElementById('lookup-input');
   if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') lookupMember(); });
@@ -1415,149 +1357,8 @@ function resetForm() {
 }
 
 // ══════════════════════════════════════
-// 店家後台
-// ══════════════════════════════════════
-function buildAdminDates() {
-  const tabs = document.getElementById('admin-date-tabs');
-  const now  = new Date();
-  const days = ['日','一','二','三','四','五','六'];
-  const openDays = String(state.config.open_days || '3,4,5').split(',').map(Number);
-  tabs.innerHTML = '';
-  state.adminDates = [];
+function switchView(v) {}
 
-  let count = 0;
-  for (let i = 0; i <= 30 && count < 5; i++) {
-    const d = new Date(now);
-    d.setDate(now.getDate() + i);
-    if (!openDays.includes(d.getDay())) continue;
-    const dateStr = `${d.getMonth()+1}/${d.getDate()}（週${days[d.getDay()]}）`;
-    state.adminDates.push(dateStr);
-    const idx = count;
-    const btn = document.createElement('div');
-    btn.className = 'date-tab' + (count === 0 ? ' active' : '');
-    btn.textContent = dateStr;
-    btn.onclick = () => {
-      document.querySelectorAll('.date-tab').forEach(t => t.classList.remove('active'));
-      btn.classList.add('active');
-      state.adminDateIdx = idx;
-      renderAdminReservations(idx);
-    };
-    tabs.appendChild(btn);
-    count++;
-  }
-  if (count > 0) renderAdminReservations(0);
-}
-
-async function renderAdminReservations(idx) {
-  const dateStr = state.adminDates[idx];
-  if (!dateStr) return;
-  document.getElementById('admin-date-label').textContent = dateStr + ' 預約清單';
-  document.getElementById('supply-date-label').textContent = dateStr;
-
-  showLoading('載入預約資料…');
-  try {
-    const [resResult, supplyResult] = await Promise.all([
-      api('getReservations', { date: dateStr }),
-      api('getSupply',       { date: dateStr })
-    ]);
-    hideLoading();
-
-    // 預約清單
-    const list = document.getElementById('admin-res-list');
-    const res  = resResult.success ? resResult.reservations : [];
-    document.getElementById('admin-date-label').textContent = dateStr + ' 預約清單（' + res.length + '筆）';
-
-    // 統計
-    const totalPax     = res.reduce((s, r) => s + Number(r.pax), 0);
-    document.getElementById('stat-today').textContent = totalPax;
-    document.getElementById('stat-week').textContent  = res.length;
-
-    if (res.length === 0) {
-      list.innerHTML = '<div style="text-align:center;color:var(--soft);padding:30px;background:white;border-radius:10px;">本日暫無預約</div>';
-    } else {
-      list.innerHTML = res.map(r => `
-        <div class="res-card">
-          <div class="res-time">${r.time}<span class="period">入座</span></div>
-          <div class="res-divider"></div>
-          <div class="res-info">
-            <div class="res-name">${r.name} <span class="tag tag-gold">會員</span></div>
-            <div class="res-meta">${r.pax} 位・${r.orderId}</div>
-            <div class="res-orders">📋 ${r.orders || '未選餐飲'}</div>
-            ${r.notes ? '<div style="font-size:11px;color:var(--danger);margin-top:3px;">💬 ' + r.notes + '</div>' : ''}
-          </div>
-          <div class="res-pax">
-            <div class="pax-circle">${r.pax}</div>
-            <div class="pax-text">人</div>
-          </div>
-        </div>`).join('');
-    }
-
-    // 備料
-    const sg     = document.getElementById('supply-grid');
-    const supply = supplyResult.success ? supplyResult.supply : [];
-    if (supply.length === 0) {
-      sg.innerHTML = '<div style="color:var(--soft);font-size:13px;grid-column:1/-1;">無需備料</div>';
-    } else {
-      sg.innerHTML = supply.map(s => `
-        <div class="supply-item">
-          <div class="s-name">${s.name}</div>
-          <div><span class="s-qty">${s.qty}</span><span class="s-unit2">份</span></div>
-        </div>`).join('');
-    }
-
-    // 歷史（全部）
-    const histRes = await api('getMemberHistory', { name: '' });
-    // 取預約紀錄作為歷史（全部日期）
-    const allRes = await api('getReservations', { date: '' });
-    renderHistory(resResult.reservations || []);
-
-  } catch (e) {
-    hideLoading();
-    showError('載入失敗，請確認 Apps Script 已正確部署');
-  }
-}
-
-function renderHistory(rows) {
-  const tbody = document.getElementById('history-tbody');
-  if (!rows || rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--soft);padding:20px;">暫無資料</td></tr>';
-    return;
-  }
-  tbody.innerHTML = rows.map(r => `
-    <tr>
-      <td><strong>${r.name}</strong></td>
-      <td>${r.date}</td>
-      <td>${r.time}</td>
-      <td>${r.pax}</td>
-      <td>${(r.orders||'').split(',').filter(o => /咖啡|拿鐵|美式|濃縮|冰滴|茶|蔬果汁|阿芙/.test(o)).join(', ') || '—'}</td>
-      <td>${(r.orders||'').split(',').filter(o => /三明治|泡麵|能量|爆米花|粥|湯|芝麻|冰淇淋|雪酪/.test(o)).join(', ') || '—'}</td>
-      <td style="color:var(--soft)">${r.notes || '—'}</td>
-    </tr>`).join('');
-}
-
-async function exportCSV() {
-  showLoading('準備匯出…');
-  const res = await api('getReservations', { date: state.adminDates[state.adminDateIdx] || '' });
-  hideLoading();
-  const rows = [['預約編號','填單日期','預約日期','時段','姓名','Email','電話','人數','點餐內容','預估金額','備註','狀態']];
-  (res.reservations || []).forEach(r => {
-    rows.push([r.orderId,'',r.date,r.time,r.name,r.email||'',r.phone||'',r.pax,r.orders,r.total,r.notes,r.status]);
-  });
-  const csv  = rows.map(r => r.map(c => '"' + String(c||'').replace(/"/g,'""') + '"').join(',')).join('\n');
-  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
-  const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = '卡薩布蘭加預約清單.csv';
-  a.click();
-}
-
-function switchView(v) {
-  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-  document.getElementById('view-' + v).classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
-  if (v === 'admin') buildAdminDates();
-}
 </script>
 </body>
 </html>
