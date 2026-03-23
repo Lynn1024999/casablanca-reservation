@@ -237,13 +237,37 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// ── API ──
-async function api(action, params = {}) {
-  const url = new URL(SCRIPT_URL);
-  url.searchParams.set('action', action);
-  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
-  const res = await fetch(url.toString());
-  return res.json();
+// ── API（JSONP，繞過 CORS）──
+function api(action, params) {
+  params = params || {};
+  return new Promise(function(resolve, reject) {
+    var cbName = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    var url = new URL(SCRIPT_URL);
+    url.searchParams.set('action', action);
+    url.searchParams.set('callback', cbName);
+    Object.keys(params).forEach(function(k) { url.searchParams.set(k, params[k]); });
+
+    var timer = setTimeout(function() {
+      delete window[cbName];
+      reject(new Error('timeout'));
+    }, 15000);
+
+    window[cbName] = function(data) {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (sc && sc.parentNode) sc.parentNode.removeChild(sc);
+      resolve(data);
+    };
+
+    var sc = document.createElement('script');
+    sc.src = url.toString();
+    sc.onerror = function() {
+      clearTimeout(timer);
+      delete window[cbName];
+      reject(new Error('script error'));
+    };
+    document.head.appendChild(sc);
+  });
 }
 function showLoading(msg='載入中…') {
   const el = document.getElementById('global-loading');
