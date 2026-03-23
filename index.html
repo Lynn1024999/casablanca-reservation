@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卡薩布蘭加 · 智慧預約系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #b8975a;
+    --gold-light: #d4b57a;
+    --gold-pale: #f5edd8;
+    --cream: #faf7f2;
+    --dark: #2c2416;
+    --mid: #6b5c3e;
+    --soft: #a89270;
+    --border: #e0d4bb;
+    --white: #ffffff;
+    --success: #4a7c59;
+    --danger: #8b3a3a;
+    --shadow: 0 2px 20px rgba(44,36,22,0.08);
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--cream);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  /* ── TOP NAV ── */
+  .top-nav {
+    background: var(--dark);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .top-nav .logo {
+    font-family: 'Noto Serif TC', serif;
+    color: var(--gold-light);
+    font-size: 15px;
+    letter-spacing: 2px;
+  }
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .nav-tab {
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--soft);
+    transition: all .2s;
+    border: none;
+    background: transparent;
+  }
+  .nav-tab.active {
+    background: var(--gold);
+    color: var(--white);
+  }
+  .nav-tab:hover:not(.active) { color: var(--gold-light); }
+
+  /* ── VIEWS ── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── CUSTOMER FLOW ── */
+  .customer-wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  .cafe-header {
+    text-align: center;
+    padding: 28px 0 20px;
+  }
+  .cafe-header img {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--gold);
+    margin-bottom: 10px;
+    background: var(--gold-pale);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cafe-name {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 20px;
+    color: var(--dark);
+    letter-spacing: 3px;
+    margin-bottom: 4px;
+  }
+  .cafe-sub {
+    font-size: 12px;
+    color: var(--soft);
+    letter-spacing: 1px;
+  }
+
+  /* Steps indicator */
+  .steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 20px 0 28px;
+  }
+  .step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .step-circle {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--soft);
+    font-size: 12px;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .3s;
+  }
+  .step-item.active .step-circle { background: var(--gold); color: white; }
+  .step-item.done .step-circle { background: var(--success); color: white; }
+  .step-label { font-size: 10px; color: var(--soft); white-space: nowrap; }
+  .step-item.active .step-label { color: var(--gold); }
+  .step-line { width: 40px; height: 1px; background: var(--border); margin-bottom: 16px; flex-shrink: 0; }
+
+  /* Cards */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px;
+    color: var(--dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .icon {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: var(--gold-pale);
+    color: var(--gold);
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Form elements */
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    font-size: 12px;
+    color: var(--mid);
+    margin-bottom: 6px;
+    display: block;
+    letter-spacing: .5px;
+  }
+  .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--dark);
+    background: var(--cream);
+    transition: border .2s;
+    outline: none;
+  }
+  .form-input:focus { border-color: var(--gold); background: white; }
+
+  /* Member found badge */
+  .member-badge {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: #f0f7f2;
+    border: 1px solid #b8d8c4;
+    margin-top: 12px;
+  }
+  .member-badge.show { display: flex; }
+  .member-badge .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: white;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .member-badge .info { flex: 1; }
+  .member-badge .name { font-size: 14px; font-weight: 500; color: var(--dark); }
+  .member-badge .tag { font-size: 11px; color: var(--success); margin-top: 2px; }
+  .member-badge .check { color: var(--success); font-size: 18px; }
+
+  /* Date grid */
+  .date-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .date-btn {
+    padding: 10px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    background: var(--cream);
+  }
+  .date-btn:hover { border-color: var(--gold); }
+  .date-btn.selected { border-color: var(--gold); background: var(--gold); color: white; }
+  .date-btn.disabled { opacity: .4; cursor: not-allowed; }
+  .date-btn .dow { font-size: 10px; color: inherit; opacity: .8; }
+  .date-btn .d { font-size: 18px; font-weight: 500; }
+  .date-btn .mon { font-size: 10px; opacity: .7; }
+  .date-btn.selected .dow,
+  .date-btn.selected .mon { color: rgba(255,255,255,0.85); }
+
+  .time-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .time-btn {
+    padding: 8px 4px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all .2s;
+    background: var(--cream);
+  }
+  .time-btn:hover { border-color: var(--gold); }
+  .time-btn.selected { border-color: var(--gold); background: var(--gold); color: white; }
+
+  .pax-selector {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .pax-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--cream);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--mid);
+    transition: all .2s;
+  }
+  .pax-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .pax-num {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--dark);
+    min-width: 32px;
+    text-align: center;
+  }
+  .pax-label { font-size: 12px; color: var(--soft); }
+
+  /* Menu sections */
+  .menu-section { margin-bottom: 20px; }
+  .menu-section-title {
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--gold-pale);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .menu-items { display: flex; flex-direction: column; gap: 6px; }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1.5px solid transparent;
+    background: var(--cream);
+    transition: all .2s;
+    cursor: pointer;
+  }
+  .menu-item:hover { border-color: var(--gold-light); background: var(--gold-pale); }
+  .menu-item.in-cart { border-color: var(--gold); background: var(--gold-pale); }
+  .menu-item-name { flex: 1; font-size: 13px; color: var(--dark); }
+  .menu-item-price { font-size: 12px; color: var(--soft); min-width: 28px; text-align: right; }
+  .qty-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .qty-btn {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--mid);
+    transition: all .2s;
+    flex-shrink: 0;
+  }
+  .qty-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .qty-display {
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 20px;
+    text-align: center;
+    color: var(--dark);
+  }
+
+  /* Order summary sticky */
+  .order-summary {
+    position: sticky;
+    bottom: 0;
+    left: 0; right: 0;
+    background: white;
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 -4px 20px rgba(44,36,22,0.1);
+  }
+  .order-summary .total-info { flex: 1; }
+  .order-summary .item-count { font-size: 11px; color: var(--soft); }
+  .order-summary .total-price { font-size: 16px; font-weight: 500; color: var(--dark); }
+
+  /* Buttons */
+  .btn {
+    padding: 11px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all .2s;
+    border: none;
+    font-weight: 500;
+  }
+  .btn-primary {
+    background: var(--gold);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--gold-light); }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--mid);
+    border: 1.5px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-full { width: 100%; }
+
+  .btn-lookup {
+    width: 100%;
+    padding: 10px;
+    background: var(--dark);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background .2s;
+    letter-spacing: 1px;
+  }
+  .btn-lookup:hover { background: var(--mid); }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Alert */
+  .alert {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .alert-warn {
+    background: #fdf4e3;
+    border: 1px solid #e8c97a;
+    color: #7a5a1a;
+  }
+  .alert-success {
+    background: #f0f7f2;
+    border: 1px solid #b8d8c4;
+    color: var(--success);
+  }
+  .alert-info {
+    background: #e8f0f8;
+    border: 1px solid #9bb8d8;
+    color: #2a5080;
+  }
+
+  /* Notes field */
+  .form-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--dark);
+    background: var(--cream);
+    resize: vertical;
+    min-height: 70px;
+    outline: none;
+  }
+  .form-textarea:focus { border-color: var(--gold); background: white; }
+
+  /* Confirmation screen */
+  .confirm-screen { text-align: center; padding: 40px 0; }
+  .confirm-icon {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: #f0f7f2;
+    color: var(--success);
+    font-size: 28px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .confirm-title { font-family: 'Noto Serif TC', serif; font-size: 20px; margin-bottom: 8px; }
+  .confirm-sub { font-size: 13px; color: var(--soft); line-height: 1.8; }
+  .confirm-detail {
+    background: var(--cream);
+    border-radius: 10px;
+    padding: 16px;
+    margin: 20px 0;
+    text-align: left;
+  }
+  .confirm-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .confirm-row:last-child { border-bottom: none; }
+  .confirm-row .label { color: var(--soft); }
+  .confirm-row .value { color: var(--dark); font-weight: 500; }
+
+  /* ── ADMIN VIEW ── */
+  .admin-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  .admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .admin-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 18px;
+    color: var(--dark);
+  }
+  .admin-subtitle { font-size: 12px; color: var(--soft); margin-top: 2px; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 600px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .stat-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .stat-card .s-label { font-size: 11px; color: var(--soft); letter-spacing: .5px; margin-bottom: 6px; }
+  .stat-card .s-value { font-size: 26px; font-weight: 500; color: var(--dark); }
+  .stat-card .s-unit { font-size: 12px; color: var(--soft); margin-left: 3px; }
+  .stat-card .s-sub { font-size: 11px; color: var(--success); margin-top: 4px; }
+
+  /* Date tabs */
+  .date-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .date-tab {
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: white;
+    white-space: nowrap;
+    transition: all .2s;
+    color: var(--mid);
+  }
+  .date-tab.active { background: var(--gold); color: white; border-color: var(--gold); }
+
+  /* Reservation list */
+  .res-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .res-card {
+    background: white;
+    border-radius: 10px;
+    padding: 14px 18px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .res-time {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--gold);
+    min-width: 50px;
+    text-align: center;
+  }
+  .res-time .period { font-size: 10px; color: var(--soft); display: block; }
+  .res-divider { width: 1px; height: 40px; background: var(--border); }
+  .res-info { flex: 1; }
+  .res-name { font-size: 14px; font-weight: 500; color: var(--dark); }
+  .res-meta { font-size: 12px; color: var(--soft); margin-top: 2px; }
+  .res-orders { font-size: 12px; color: var(--mid); margin-top: 4px; }
+  .res-pax {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .pax-circle {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--gold-pale);
+    color: var(--gold);
+    font-size: 15px;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pax-text { font-size: 10px; color: var(--soft); }
+
+  /* Supply section */
+  .supply-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 600px) { .supply-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .supply-item {
+    background: white;
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  .supply-item .s-name { font-size: 12px; color: var(--mid); margin-bottom: 6px; }
+  .supply-item .s-qty { font-size: 22px; font-weight: 500; color: var(--dark); }
+  .supply-item .s-unit2 { font-size: 11px; color: var(--soft); margin-left: 3px; }
+
+  .section-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px;
+    color: var(--dark);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .csv-btn {
+    padding: 6px 14px;
+    background: var(--dark);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .2s;
+    letter-spacing: .5px;
+  }
+  .csv-btn:hover { background: var(--mid); }
+
+  /* History table */
+  .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .history-table th {
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--cream);
+    color: var(--soft);
+    font-weight: 400;
+    font-size: 11px;
+    letter-spacing: .5px;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--dark);
+  }
+  .history-table tr:last-child td { border-bottom: none; }
+  .history-table tr:hover td { background: var(--cream); }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+  }
+  .tag-gold { background: var(--gold-pale); color: var(--gold); }
+  .tag-green { background: #e8f5ee; color: var(--success); }
+
+  /* Divider */
+  .section-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 28px 0;
+  }
+
+  /* Demo hint */
+  .demo-hint {
+    position: fixed;
+    bottom: 70px;
+    right: 16px;
+    background: var(--dark);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    opacity: .8;
+    pointer-events: none;
+    z-index: 200;
+  }
+
+  .progress-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+  .pb-seg {
+    height: 3px;
+    flex: 1;
+    border-radius: 2px;
+    background: var(--border);
+    transition: background .4s;
+  }
+  .pb-seg.done { background: var(--gold); }
+
+  .checkbox-group { display: flex; flex-direction: column; gap: 8px; }
+  .checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .checkbox-item:hover { background: var(--cream); }
+  .checkbox-item input { accent-color: var(--gold); width: 16px; height: 16px; }
+  .checkbox-item label { font-size: 13px; cursor: pointer; color: var(--dark); }
+
+  /* Mobile optimization */
+  @media (max-width: 480px) {
+    .time-grid { grid-template-columns: repeat(3, 1fr); }
+    .date-grid { grid-template-columns: repeat(3, 1fr); }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="logo">卡薩布蘭加 · 人文咖啡館</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchView('customer')">顧客預約</button>
+    <button class="nav-tab" onclick="switchView('admin')">店家後台</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════
+     CUSTOMER VIEW
+═══════════════════════════════════════ -->
+<div id="view-customer" class="view active">
+<div class="customer-wrap">
+
+  <div class="cafe-header">
+    <div style="width:64px;height:64px;border-radius:50%;background:var(--gold-pale);border:2px solid var(--gold);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:26px;">☕</div>
+    <div class="cafe-name">卡薩布蘭加</div>
+    <div class="cafe-sub">會員預約系統 · 2026</div>
+  </div>
+
+  <!-- Step indicator -->
+  <div class="steps">
+    <div class="step-item active" id="step-0">
+      <div class="step-circle">1</div>
+      <div class="step-label">驗證身份</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-1">
+      <div class="step-circle">2</div>
+      <div class="step-label">選時間</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-2">
+      <div class="step-circle">3</div>
+      <div class="step-label">選餐點</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-3">
+      <div class="step-circle">4</div>
+      <div class="step-label">確認送出</div>
+    </div>
+  </div>
+
+  <!-- Panel 0: Member lookup -->
+  <div class="panel active" id="panel-0">
+    <div class="card">
+      <div class="card-title"><span class="icon">👤</span> 會員驗證</div>
+      <div class="alert alert-info" style="font-size:12px;margin-bottom:16px;">
+        ℹ️ 自 2026 年 3 月起，本店僅開放 <strong>會員預約</strong>。請輸入您的電話號碼或 Email 驗證。
+      </div>
+      <div class="form-group">
+        <label class="form-label">電話號碼 或 Email</label>
+        <input class="form-input" id="lookup-input" type="text" placeholder="0912-345-678 或 email@example.com">
+      </div>
+      <button class="btn-lookup" onclick="lookupMember()">🔍 查詢會員資料</button>
+
+      <div id="member-found" class="member-badge">
+        <div class="avatar" id="member-avatar">林</div>
+        <div class="info">
+          <div class="name" id="member-name">林美玲</div>
+          <div class="tag">✓ 會員身份已確認 · 靜心推廣與心靈成長協會</div>
+        </div>
+        <div class="check">✓</div>
+      </div>
+
+      <div id="member-not-found" style="display:none;margin-top:12px;">
+        <div class="alert alert-warn">
+          ⚠️ 查無此會員資料。非會員無法預約，請先透過 Line 向小編申請加入會員。
+        </div>
+        <div style="text-align:center;margin-top:8px;">
+          <a href="#" style="font-size:13px;color:var(--gold);">📱 加入官方 Line 申請會員 →</a>
+        </div>
+      </div>
+
+    </div>
+    <button class="btn btn-primary btn-full" id="btn-step1" onclick="gotoPanel(1)" disabled>下一步：選擇時間 →</button>
+  </div>
+
+  <!-- Panel 1: Date & Time & Pax -->
+  <div class="panel" id="panel-1">
+    <div class="card">
+      <div class="card-title"><span class="icon">📅</span> 選擇日期</div>
+      <div class="alert alert-warn" style="font-size:12px;margin-bottom:14px;">
+        ⏰ 請至少提前 <strong>2 日</strong>預約。如需臨時預約，請先 Line 小編確認。
+      </div>
+      <div class="date-grid" id="date-grid"></div>
+    </div>
+
+    <div class="card" id="time-card" style="display:none">
+      <div class="card-title"><span class="icon">🕐</span> 選擇時段</div>
+      <div class="time-grid" id="time-grid">
+        <div class="time-btn" onclick="selectTime(this,'13:00')">13:00</div>
+        <div class="time-btn" onclick="selectTime(this,'13:30')">13:30</div>
+        <div class="time-btn" onclick="selectTime(this,'14:00')">14:00</div>
+        <div class="time-btn" onclick="selectTime(this,'14:30')">14:30</div>
+        <div class="time-btn" onclick="selectTime(this,'15:00')">15:00</div>
+        <div class="time-btn" onclick="selectTime(this,'15:30')">15:30</div>
+        <div class="time-btn" onclick="selectTime(this,'16:00')">16:00</div>
+        <div class="time-btn" onclick="selectTime(this,'16:30')">16:30</div>
+        <div class="time-btn" onclick="selectTime(this,'17:00')">17:00</div>
+        <div class="time-btn" onclick="selectTime(this,'17:30')">17:30</div>
+        <div class="time-btn" onclick="selectTime(this,'18:00')">18:00</div>
+        <div class="time-btn" onclick="selectTime(this,'18:30')">18:30</div>
+        <div class="time-btn" onclick="selectTime(this,'19:00')">19:00</div>
+        <div class="time-btn" onclick="selectTime(this,'19:30')">19:30</div>
+        <div class="time-btn" onclick="selectTime(this,'20:00')">20:00</div>
+      </div>
+    </div>
+
+    <div class="card" id="pax-card" style="display:none">
+      <div class="card-title"><span class="icon">👥</span> 人數（含非會員）</div>
+      <div class="pax-selector">
+        <button class="pax-btn" onclick="changePax(-1)">−</button>
+        <div>
+          <span class="pax-num" id="pax-num">2</span>
+          <span class="pax-label"> 位</span>
+        </div>
+        <button class="pax-btn" onclick="changePax(1)">＋</button>
+      </div>
+      <div style="font-size:11px;color:var(--soft);margin-top:8px;">會員可攜非會員同行入場</div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="gotoPanel(0)">← 返回</button>
+      <button class="btn btn-primary" style="flex:1" id="btn-step2" onclick="gotoPanel(2)" disabled>下一步：選擇餐點 →</button>
+    </div>
+  </div>
+
+  <!-- Panel 2: Menu -->
+  <div class="panel" id="panel-2">
+    <div class="card">
+      <div class="card-title"><span class="icon">☕</span> 點選餐飲</div>
+      <div class="alert alert-info" style="font-size:12px;margin-bottom:14px;">
+        本店低消：<strong>飲品一份</strong>（咖啡、花茶或蔬果汁）。餐點須提前預約，當日無法臨時加點。
+      </div>
+
+      <!-- Coffee -->
+      <div class="menu-section">
+        <div class="menu-section-title">☕ 有機咖啡</div>
+        <div class="menu-items" id="menu-coffee"></div>
+      </div>
+
+      <!-- Tea -->
+      <div class="menu-section">
+        <div class="menu-section-title">🍵 有機花草茶（熱飲壺）</div>
+        <div class="menu-items" id="menu-tea"></div>
+      </div>
+
+      <!-- Food -->
+      <div class="menu-section">
+        <div class="menu-section-title">🥪 預約餐點（須提前預約）</div>
+        <div class="menu-items" id="menu-food"></div>
+      </div>
+
+      <!-- Energy balls -->
+      <div class="menu-section">
+        <div class="menu-section-title">⚡ 阿育吠陀能量球（每日限量）</div>
+        <div class="menu-items" id="menu-energy"></div>
+      </div>
+
+      <!-- Snacks -->
+      <div class="menu-section">
+        <div class="menu-section-title">🍿 點心 & 其他</div>
+        <div class="menu-items" id="menu-snack"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="gotoPanel(1)">← 返回</button>
+      <button class="btn btn-primary" style="flex:1" id="btn-step3" onclick="gotoPanel(3)">下一步：確認送出 →</button>
+    </div>
+  </div>
+
+  <!-- Panel 3: Confirm -->
+  <div class="panel" id="panel-3">
+    <div class="card">
+      <div class="card-title"><span class="icon">📋</span> 確認預約內容</div>
+      <div class="confirm-detail" id="confirm-detail"></div>
+
+      <div class="form-group" style="margin-top:16px;">
+        <label class="form-label">備註（可留空）</label>
+        <textarea class="form-textarea" id="notes-input" placeholder="如有特殊需求或說明，請在此填寫…"></textarea>
+      </div>
+
+      <div class="alert alert-warn" style="font-size:12px;margin-top:8px;">
+        ☑️ 本店低消為飲品一份（咖啡、花茶或蔬果汁）。
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:80px;">
+      <button class="btn btn-ghost" onclick="gotoPanel(2)">← 修改</button>
+      <button class="btn btn-primary" style="flex:1" onclick="submitReservation()">✓ 送出預約</button>
+    </div>
+  </div>
+
+  <!-- Panel 4: Done -->
+  <div class="panel" id="panel-4">
+    <div class="card">
+      <div class="confirm-screen">
+        <div class="confirm-icon">✓</div>
+        <div class="confirm-title">預約成功！</div>
+        <div class="confirm-sub">
+          確認信將寄送至您的 Email。<br>
+          如需更改或取消，請至少 2 日前聯繫小編。
+        </div>
+        <div class="confirm-detail" id="success-detail" style="margin:20px 0;"></div>
+        <button class="btn btn-ghost" onclick="resetForm()" style="margin-top:8px;width:100%;">重新預約</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /customer-wrap -->
+
+<!-- Sticky order bar (panel 2 only) -->
+<div class="order-summary" id="order-bar" style="display:none;">
+  <div class="total-info">
+    <div class="item-count" id="bar-count">0 個品項</div>
+    <div class="total-price" id="bar-total">$0</div>
+  </div>
+</div>
+
+</div><!-- /view-customer -->
+
+
+<!-- ═══════════════════════════════════════
+     ADMIN VIEW
+═══════════════════════════════════════ -->
+<div id="view-admin" class="view">
+<div class="admin-wrap">
+
+  <div class="admin-header">
+    <div>
+      <div class="admin-title">店家管理後台</div>
+      <div class="admin-subtitle">預約統計 · 備料清單 · 會員紀錄</div>
+    </div>
+    <button class="csv-btn" onclick="exportCSV()">⬇ 匯出 CSV</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="s-label">本週預約</div>
+      <div><span class="s-value" id="stat-week">12</span><span class="s-unit">筆</span></div>
+      <div class="s-sub">↑ 較上週 +3</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label">今日來客</div>
+      <div><span class="s-value" id="stat-today">18</span><span class="s-unit">人</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label">飲品需備</div>
+      <div><span class="s-value">23</span><span class="s-unit">份</span></div>
+      <div class="s-sub">今日合計</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label">餐點需備</div>
+      <div><span class="s-value">11</span><span class="s-unit">份</span></div>
+      <div class="s-sub">含能量球</div>
+    </div>
+  </div>
+
+  <!-- Date tabs -->
+  <div class="date-tabs" id="admin-date-tabs"></div>
+
+  <!-- Reservation list -->
+  <div class="section-title">
+    <span id="admin-date-label">預約清單</span>
+  </div>
+  <div class="res-list" id="admin-res-list"></div>
+
+  <div class="section-divider"></div>
+
+  <!-- Supply list -->
+  <div class="section-title">
+    <span>備料清單（<span id="supply-date-label">選定日期</span>）</span>
+  </div>
+  <div class="supply-grid" id="supply-grid"></div>
+
+  <div class="section-divider"></div>
+
+  <!-- Member history -->
+  <div class="section-title">
+    <span>會員預約歷史</span>
+  </div>
+  <div style="background:white;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);">
+    <table class="history-table" id="history-table">
+      <thead>
+        <tr>
+          <th>姓名</th>
+          <th>日期</th>
+          <th>時段</th>
+          <th>人數</th>
+          <th>飲品</th>
+          <th>餐點</th>
+          <th>備註</th>
+        </tr>
+      </thead>
+      <tbody id="history-tbody"></tbody>
+    </table>
+  </div>
+
+</div>
+</div><!-- /view-admin -->
+
+<div class="demo-hint">Demo 原型 · 資料為示範用途</div>
+
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  設定：部署後將 YOUR_SCRIPT_URL 換成實際的 Apps Script URL
+// ══════════════════════════════════════════════════════════
+const SCRIPT_URL = 'YOUR_SCRIPT_URL_HERE';
+
+// API 呼叫工具
+async function api(action, params = {}) {
+  const url = new URL(SCRIPT_URL);
+  url.searchParams.set('action', action);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString());
+  return res.json();
+}
+
+async function apiPost(action, body) {
+  const url = new URL(SCRIPT_URL);
+  url.searchParams.set('action', action);
+  const res = await fetch(url.toString(), {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+// 載入中 UI
+function showLoading(msg = '處理中…') {
+  let el = document.getElementById('global-loading');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'global-loading';
+    el.style.cssText = 'position:fixed;top:52px;left:0;right:0;background:var(--gold);color:white;text-align:center;padding:8px;font-size:13px;z-index:999;letter-spacing:1px;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideLoading() {
+  const el = document.getElementById('global-loading');
+  if (el) el.style.display = 'none';
+}
+function showError(msg) {
+  hideLoading();
+  alert('⚠️ ' + msg);
+}
+
+// ── State
+let state = {
+  currentPanel: 0,
+  member: null,
+  selectedDate: null,
+  selectedTime: null,
+  pax: 2,
+  cart: {},
+  adminDateIdx: 0,
+  config: { advance_days: 2, open_days: '3,4,5', time_start: '13:00', time_end: '20:00', time_interval: 30 },
+  menu: null,
+  adminDates: []
+};
+
+// ══════════════════════════════════════
+// INIT：從 Apps Script 讀取設定與菜單
+// ══════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  showLoading('載入系統設定…');
+  try {
+    const [configRes, menuRes] = await Promise.all([
+      api('getConfig'),
+      api('getMenu')
+    ]);
+    if (configRes.success) state.config = { ...state.config, ...configRes.config };
+    if (menuRes.success)   state.menu = menuRes.menu;
+  } catch (e) {
+    console.warn('無法連線 Apps Script，使用預設設定', e);
+    state.menu = FALLBACK_MENU;
+  }
+  hideLoading();
+
+  buildDateGrid();
+  buildMenus();
+  buildAdminDates();
+
+  const input = document.getElementById('lookup-input');
+  if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') lookupMember(); });
+});
+
+// ══════════════════════════════════════
+// 後備菜單（Apps Script 連不上時使用）
+// ══════════════════════════════════════
+const FALLBACK_MENU = {
+  coffee: [
+    { name: '有機冰滴拿鐵（招牌）', price: 250 },
+    { name: '有機冰滴咖啡', price: 250 },
+    { name: '有機愛爾蘭拿鐵', price: 250 },
+    { name: '有機黑糖拿鐵', price: 180 },
+    { name: '有機棉花糖拿鐵', price: 180 },
+    { name: '有機楓糖拿鐵', price: 180 },
+    { name: '有機焦糖拿鐵', price: 180 },
+    { name: '有機原味拿鐵', price: 180 },
+    { name: '阿芙加朵（冰淇淋+濃縮）', price: 250 },
+    { name: '有機美式咖啡', price: 160 },
+    { name: '有機義式濃縮咖啡', price: 160 },
+  ],
+  tea: [
+    { name: '有機智慧女神茶', price: 180 },
+    { name: '有機維納斯美神茶', price: 180 },
+    { name: '有機紓壓放鬆茶', price: 180 },
+    { name: '有機南非醉茄茶（印度人蔘）', price: 180 },
+    { name: '有機北美松葉茶', price: 180 },
+    { name: '有機蓮花圓滿茶', price: 180 },
+    { name: '有機南非國寶茶', price: 180 },
+    { name: '有機日月潭紅玉（台茶18號）', price: 180 },
+    { name: '有機英式伯爵茶', price: 140 },
+    { name: '有機茉莉綠茶', price: 140 },
+    { name: '有機牛蒡養生茶', price: 160 },
+    { name: '有機山苦瓜平衡茶', price: 160 },
+  ],
+  food: [
+    { name: '鷹嘴豆蛋沙拉三明治', price: 180 },
+    { name: '鮪魚蘋果三明治', price: 180 },
+    { name: '家常泡麵（辣）', price: 160 },
+    { name: '綠色活氧蔬果汁', price: 190 },
+    { name: '紅色元氣蔬果汁', price: 190 },
+  ],
+  energy: [
+    { name: '經典紓壓能量球', price: 75, note: '3個 $190' },
+    { name: '花生燕麥能量球', price: 60, note: '3個 $145，可混搭' },
+    { name: '堅果巧克力能量球', price: 60, note: '3個 $145，可混搭' },
+  ],
+  snack: [
+    { name: '經典爆米花－焦糖奶油', price: 100 },
+    { name: '經典爆米花－鹹甜肉桂', price: 100 },
+    { name: '紅豆紫米粥（溫熱）', price: 80 },
+    { name: '花生杏仁湯（溫熱）', price: 80 },
+    { name: '養生芝麻糊（溫熱）', price: 80 },
+    { name: '冰淇淋', price: 120 },
+    { name: '水果雪酪（限量）', price: 150 },
+  ]
+};
+
+// ══════════════════════════════════════
+// 會員查詢（呼叫 Apps Script）
+// ══════════════════════════════════════
+async function lookupMember() {
+  const val = document.getElementById('lookup-input').value.trim();
+  if (!val) return;
+
+  showLoading('查詢會員資料…');
+  try {
+    const res = await api('lookupMember', { query: val });
+    hideLoading();
+
+    document.getElementById('member-found').classList.toggle('show', res.success);
+    document.getElementById('member-not-found').style.display = res.success ? 'none' : 'block';
+
+    if (res.success) {
+      state.member = res.member;
+      document.getElementById('member-name').textContent = res.member.name;
+      document.getElementById('member-avatar').textContent = res.member.name[0];
+      document.getElementById('btn-step1').disabled = false;
+    } else {
+      state.member = null;
+      document.getElementById('btn-step1').disabled = true;
+    }
+  } catch (e) {
+    showError('無法連線，請稍後再試');
+  }
+}
+
+// ══════════════════════════════════════
+// 日期格（依 config 設定動態產生）
+// ══════════════════════════════════════
+function buildDateGrid() {
+  const grid = document.getElementById('date-grid');
+  const now  = new Date();
+  const days = ['日','一','二','三','四','五','六'];
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const advanceDays = Number(state.config.advance_days) || 2;
+  const openDays    = String(state.config.open_days || '3,4,5').split(',').map(Number);
+  grid.innerHTML = '';
+
+  let count = 0;
+  for (let i = advanceDays; i <= 60 && count < 9; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
+    const dow     = d.getDay();
+    const isOpen  = openDays.includes(dow);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+    const btn     = document.createElement('div');
+    btn.className = 'date-btn' + (isOpen ? '' : ' disabled');
+    btn.innerHTML = `<div class="dow">${days[dow]}</div><div class="d">${d.getDate()}</div><div class="mon">${months[d.getMonth()]}</div>`;
+    if (isOpen) btn.onclick = () => selectDate(btn, dateStr, days[dow]);
+    grid.appendChild(btn);
+    count++;
+  }
+}
+
+function selectDate(btn, dateStr, dow) {
+  document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.selectedDate = dateStr + '（週' + dow + '）';
+  buildTimeGrid();
+  document.getElementById('time-card').style.display = 'block';
+  document.getElementById('pax-card').style.display = 'none';
+  state.selectedTime = null;
+  document.getElementById('btn-step2').disabled = true;
+}
+
+// ══════════════════════════════════════
+// 時段格（依 config 動態產生，每 30 分）
+// ══════════════════════════════════════
+function buildTimeGrid() {
+  const grid     = document.getElementById('time-grid');
+  const start    = state.config.time_start    || '13:00';
+  const end      = state.config.time_end      || '20:00';
+  const interval = Number(state.config.time_interval) || 30;
+
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  const startMin = sh * 60 + sm;
+  const endMin   = eh * 60 + em;
+
+  grid.innerHTML = '';
+  for (let m = startMin; m <= endMin; m += interval) {
+    const hh   = String(Math.floor(m / 60)).padStart(2, '0');
+    const mm   = String(m % 60).padStart(2, '0');
+    const t    = `${hh}:${mm}`;
+    const btn  = document.createElement('div');
+    btn.className = 'time-btn';
+    btn.textContent = t;
+    btn.onclick = () => selectTime(btn, t);
+    grid.appendChild(btn);
+  }
+}
+
+function selectTime(btn, t) {
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.selectedTime = t;
+  document.getElementById('pax-card').style.display = 'block';
+  checkStep2();
+}
+
+function changePax(d) {
+  const max = Number(state.config.max_pax) || 12;
+  state.pax = Math.max(1, Math.min(max, state.pax + d));
+  document.getElementById('pax-num').textContent = state.pax;
+  checkStep2();
+}
+
+function checkStep2() {
+  document.getElementById('btn-step2').disabled = !(state.selectedDate && state.selectedTime);
+}
+
+// ══════════════════════════════════════
+// 菜單（從 state.menu 建立，已由 Apps Script 載入）
+// ══════════════════════════════════════
+function buildMenus() {
+  const menu = state.menu || FALLBACK_MENU;
+  const catMap = {
+    coffee: 'menu-coffee', tea: 'menu-tea', food: 'menu-food',
+    energy: 'menu-energy', snack: 'menu-snack'
+  };
+  Object.entries(catMap).forEach(([cat, id]) => {
+    const items = menu[cat] || [];
+    buildMenuSection(items, id);
+  });
+}
+
+function buildMenuSection(items, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  items.forEach(item => {
+    const key = item.name;
+    const div = document.createElement('div');
+    div.className = 'menu-item';
+    div.id = 'item-' + key;
+    div.innerHTML = `
+      <div class="menu-item-name">${item.name}${item.note ? '<br><span style="font-size:11px;color:var(--soft);">'+item.note+'</span>' : ''}</div>
+      <div class="menu-item-price">$${item.price}</div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="changeQty('${key}',${item.price},-1);event.stopPropagation()">−</button>
+        <span class="qty-display" id="qty-${key}">0</span>
+        <button class="qty-btn" onclick="changeQty('${key}',${item.price},1);event.stopPropagation()">＋</button>
+      </div>`;
+    div.onclick = () => changeQty(key, item.price, 1);
+    container.appendChild(div);
+  });
+}
+
+function changeQty(key, price, delta) {
+  const cur  = state.cart[key] ? state.cart[key].qty : 0;
+  const next = Math.max(0, cur + delta);
+  if (next === 0) delete state.cart[key];
+  else state.cart[key] = { name: key, qty: next, price };
+  const el = document.getElementById('qty-' + key);
+  if (el) el.textContent = next;
+  const itemEl = document.getElementById('item-' + key);
+  if (itemEl) itemEl.classList.toggle('in-cart', next > 0);
+  updateOrderBar();
+}
+
+function updateOrderBar() {
+  let total = 0, count = 0;
+  Object.values(state.cart).forEach(v => { total += v.price * v.qty; count += v.qty; });
+  document.getElementById('bar-count').textContent = count + ' 個品項';
+  document.getElementById('bar-total').textContent = '$' + total;
+}
+
+// ══════════════════════════════════════
+// 步驟切換
+// ══════════════════════════════════════
+function gotoPanel(n) {
+  if (n === 3) buildConfirmDetail();
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + n).classList.add('active');
+  state.currentPanel = n;
+  for (let i = 0; i < 4; i++) {
+    const s = document.getElementById('step-' + i);
+    if (!s) continue;
+    s.classList.remove('active', 'done');
+    if (i < n) s.classList.add('done');
+    else if (i === n) s.classList.add('active');
+  }
+  document.getElementById('order-bar').style.display = n === 2 ? 'flex' : 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function buildConfirmDetail() {
+  const cartHtml = Object.values(state.cart).length
+    ? Object.values(state.cart).map(v => `${v.name} × ${v.qty}`).join('、')
+    : '（未點選任何餐飲）';
+  let total = 0;
+  Object.values(state.cart).forEach(v => total += v.price * v.qty);
+  document.getElementById('confirm-detail').innerHTML = `
+    <div class="confirm-row"><span class="label">姓名</span><span class="value">${state.member ? state.member.name : '—'}</span></div>
+    <div class="confirm-row"><span class="label">日期</span><span class="value">${state.selectedDate || '—'}</span></div>
+    <div class="confirm-row"><span class="label">時段</span><span class="value">${state.selectedTime || '—'}</span></div>
+    <div class="confirm-row"><span class="label">人數</span><span class="value">${state.pax} 位</span></div>
+    <div class="confirm-row"><span class="label">餐飲</span><span class="value" style="text-align:right;max-width:200px;">${cartHtml}</span></div>
+    <div class="confirm-row"><span class="label">預估金額</span><span class="value" style="color:var(--gold);">$${total}</span></div>`;
+}
+
+// ══════════════════════════════════════
+// 送出預約（呼叫 Apps Script）
+// ══════════════════════════════════════
+async function submitReservation() {
+  const notes = document.getElementById('notes-input').value;
+  const cartArr = Object.values(state.cart).map(v => ({ name: v.name, qty: v.qty, price: v.price }));
+  let total = 0;
+  cartArr.forEach(v => total += v.price * v.qty);
+
+  const body = {
+    memberName : state.member?.name  || '',
+    memberEmail: state.member?.email || '',
+    memberPhone: state.member?.phone || '',
+    date       : state.selectedDate  || '',
+    time       : state.selectedTime  || '',
+    pax        : state.pax,
+    cart       : cartArr,
+    notes
+  };
+
+  showLoading('送出預約中…');
+  try {
+    const res = await apiPost('submitReservation', body);
+    hideLoading();
+    if (!res.success) { showError(res.error || '送出失敗，請稍後再試'); return; }
+
+    const cartHtml = cartArr.length
+      ? cartArr.map(v => `${v.name} × ${v.qty}`).join('、')
+      : '（未點選餐飲）';
+    document.getElementById('success-detail').innerHTML = `
+      <div class="confirm-row"><span class="label">預約編號</span><span class="value" style="color:var(--gold);">${res.orderId}</span></div>
+      <div class="confirm-row"><span class="label">姓名</span><span class="value">${body.memberName}</span></div>
+      <div class="confirm-row"><span class="label">日期</span><span class="value">${body.date}</span></div>
+      <div class="confirm-row"><span class="label">時段</span><span class="value">${body.time}</span></div>
+      <div class="confirm-row"><span class="label">人數</span><span class="value">${body.pax} 位</span></div>
+      <div class="confirm-row"><span class="label">餐飲</span><span class="value" style="text-align:right;">${cartHtml}</span></div>
+      <div class="confirm-row"><span class="label">預估金額</span><span class="value" style="color:var(--gold);">$${total}</span></div>`;
+    gotoPanel(4);
+  } catch (e) {
+    showError('網路錯誤，請稍後再試');
+  }
+}
+
+function resetForm() {
+  state = { ...state, currentPanel: 0, member: null, selectedDate: null,
+            selectedTime: null, pax: 2, cart: {} };
+  document.getElementById('lookup-input').value = '';
+  document.getElementById('member-found').classList.remove('show');
+  document.getElementById('member-not-found').style.display = 'none';
+  document.getElementById('btn-step1').disabled = true;
+  document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('in-cart'));
+  document.querySelectorAll('.qty-display').forEach(b => b.textContent = '0');
+  document.getElementById('pax-num').textContent = '2';
+  document.getElementById('time-card').style.display = 'none';
+  document.getElementById('pax-card').style.display = 'none';
+  document.getElementById('notes-input').value = '';
+  gotoPanel(0);
+}
+
+// ══════════════════════════════════════
+// 店家後台
+// ══════════════════════════════════════
+function buildAdminDates() {
+  const tabs = document.getElementById('admin-date-tabs');
+  const now  = new Date();
+  const days = ['日','一','二','三','四','五','六'];
+  const openDays = String(state.config.open_days || '3,4,5').split(',').map(Number);
+  tabs.innerHTML = '';
+  state.adminDates = [];
+
+  let count = 0;
+  for (let i = 0; i <= 30 && count < 5; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
+    if (!openDays.includes(d.getDay())) continue;
+    const dateStr = `${d.getMonth()+1}/${d.getDate()}（週${days[d.getDay()]}）`;
+    state.adminDates.push(dateStr);
+    const idx = count;
+    const btn = document.createElement('div');
+    btn.className = 'date-tab' + (count === 0 ? ' active' : '');
+    btn.textContent = dateStr;
+    btn.onclick = () => {
+      document.querySelectorAll('.date-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      state.adminDateIdx = idx;
+      renderAdminReservations(idx);
+    };
+    tabs.appendChild(btn);
+    count++;
+  }
+  if (count > 0) renderAdminReservations(0);
+}
+
+async function renderAdminReservations(idx) {
+  const dateStr = state.adminDates[idx];
+  if (!dateStr) return;
+  document.getElementById('admin-date-label').textContent = dateStr + ' 預約清單';
+  document.getElementById('supply-date-label').textContent = dateStr;
+
+  showLoading('載入預約資料…');
+  try {
+    const [resResult, supplyResult] = await Promise.all([
+      api('getReservations', { date: dateStr }),
+      api('getSupply',       { date: dateStr })
+    ]);
+    hideLoading();
+
+    // 預約清單
+    const list = document.getElementById('admin-res-list');
+    const res  = resResult.success ? resResult.reservations : [];
+    document.getElementById('admin-date-label').textContent = dateStr + ' 預約清單（' + res.length + '筆）';
+
+    // 統計
+    const totalPax     = res.reduce((s, r) => s + Number(r.pax), 0);
+    document.getElementById('stat-today').textContent = totalPax;
+    document.getElementById('stat-week').textContent  = res.length;
+
+    if (res.length === 0) {
+      list.innerHTML = '<div style="text-align:center;color:var(--soft);padding:30px;background:white;border-radius:10px;">本日暫無預約</div>';
+    } else {
+      list.innerHTML = res.map(r => `
+        <div class="res-card">
+          <div class="res-time">${r.time}<span class="period">入座</span></div>
+          <div class="res-divider"></div>
+          <div class="res-info">
+            <div class="res-name">${r.name} <span class="tag tag-gold">會員</span></div>
+            <div class="res-meta">${r.pax} 位・${r.orderId}</div>
+            <div class="res-orders">📋 ${r.orders || '未選餐飲'}</div>
+            ${r.notes ? '<div style="font-size:11px;color:var(--danger);margin-top:3px;">💬 ' + r.notes + '</div>' : ''}
+          </div>
+          <div class="res-pax">
+            <div class="pax-circle">${r.pax}</div>
+            <div class="pax-text">人</div>
+          </div>
+        </div>`).join('');
+    }
+
+    // 備料
+    const sg     = document.getElementById('supply-grid');
+    const supply = supplyResult.success ? supplyResult.supply : [];
+    if (supply.length === 0) {
+      sg.innerHTML = '<div style="color:var(--soft);font-size:13px;grid-column:1/-1;">無需備料</div>';
+    } else {
+      sg.innerHTML = supply.map(s => `
+        <div class="supply-item">
+          <div class="s-name">${s.name}</div>
+          <div><span class="s-qty">${s.qty}</span><span class="s-unit2">份</span></div>
+        </div>`).join('');
+    }
+
+    // 歷史（全部）
+    const histRes = await api('getMemberHistory', { name: '' });
+    // 取預約紀錄作為歷史（全部日期）
+    const allRes = await api('getReservations', { date: '' });
+    renderHistory(resResult.reservations || []);
+
+  } catch (e) {
+    hideLoading();
+    showError('載入失敗，請確認 Apps Script 已正確部署');
+  }
+}
+
+function renderHistory(rows) {
+  const tbody = document.getElementById('history-tbody');
+  if (!rows || rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--soft);padding:20px;">暫無資料</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${r.name}</strong></td>
+      <td>${r.date}</td>
+      <td>${r.time}</td>
+      <td>${r.pax}</td>
+      <td>${(r.orders||'').split(',').filter(o => /咖啡|拿鐵|美式|濃縮|冰滴|茶|蔬果汁|阿芙/.test(o)).join(', ') || '—'}</td>
+      <td>${(r.orders||'').split(',').filter(o => /三明治|泡麵|能量|爆米花|粥|湯|芝麻|冰淇淋|雪酪/.test(o)).join(', ') || '—'}</td>
+      <td style="color:var(--soft)">${r.notes || '—'}</td>
+    </tr>`).join('');
+}
+
+async function exportCSV() {
+  showLoading('準備匯出…');
+  const res = await api('getReservations', { date: state.adminDates[state.adminDateIdx] || '' });
+  hideLoading();
+  const rows = [['預約編號','填單日期','預約日期','時段','姓名','Email','電話','人數','點餐內容','預估金額','備註','狀態']];
+  (res.reservations || []).forEach(r => {
+    rows.push([r.orderId,'',r.date,r.time,r.name,r.email||'',r.phone||'',r.pax,r.orders,r.total,r.notes,r.status]);
+  });
+  const csv  = rows.map(r => r.map(c => '"' + String(c||'').replace(/"/g,'""') + '"').join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = '卡薩布蘭加預約清單.csv';
+  a.click();
+}
+
+function switchView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  if (v === 'admin') buildAdminDates();
+}
+</script>
+</body>
+</html>
