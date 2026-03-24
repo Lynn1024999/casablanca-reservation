@@ -150,8 +150,18 @@ var FALLBACK_MENU = {
 
 // Member lookup
 function lookupMember() {
-  var val = document.getElementById('lookup-input').value.trim();
-  if (!val) return;
+  var raw = document.getElementById('lookup-input').value.trim();
+  if (!raw) return;
+
+  // 電話格式化：統一轉成 0912-345678
+  var val = raw;
+  var digitsOnly = raw.replace(/\D/g, '');
+  if (digitsOnly.length === 10 && digitsOnly[0] === '0') {
+    // 純數字10碼 → 自動加橫線 0912-345678
+    val = digitsOnly.slice(0,4) + '-' + digitsOnly.slice(4);
+    document.getElementById('lookup-input').value = val;
+  }
+
   showLoading('查詢會員資料…');
   api('lookupMember', { query: val })
     .then(function(res) {
