@@ -452,7 +452,7 @@ async function loadDateData(idx) {
           '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">' +
             '<div class="pax-circle">' + r.pax + '</div>' +
             '<div class="pax-text">人</div>' +
-            (!isCancelled ? '<button onclick="cancelReservation('' + r.orderId + '')" style="font-size:11px;padding:3px 8px;border:1px solid var(--danger);background:white;color:var(--danger);border-radius:4px;cursor:pointer;">取消</button>' : '') +
+            (!isCancelled ? '<button onclick="cancelReservation(\'' + r.orderId + '\')" style="font-size:11px;padding:3px 8px;border:1px solid var(--danger);background:white;color:var(--danger);border-radius:4px;cursor:pointer;">取消</button>' : '') +
           '</div>' +
         '</div>';
       }).join('');
