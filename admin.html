@@ -109,7 +109,7 @@
   <div class="logo">卡薩布蘭加 · 店家管理</div>
   <div style="display:flex;align-items:center;gap:12px;">
     <span class="badge" id="admin-account"></span>
-    <button class="logout-btn" onclick="logout()" style="display:none" id="logout-btn">登出</button>
+    <button class="logout-btn" onclick="doLogout()" style="display:none" id="logout-btn">登出</button>
   </div>
 </nav>
 
@@ -187,7 +187,7 @@
   <div class="section-divider"></div>
 
   <!-- 歷史紀錄 -->
-  <div class="section-title"><span>所有預約歷史</span></div>
+  <div class="section-title"><span>當日預約紀錄</span></div>
   <div style="background:white;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);">
     <table class="history-table">
       <thead>
@@ -213,8 +213,12 @@ function api(action, params, callback) {
   params = params || {}; params.action = action;
   fetch(GAS_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(params)
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: Object.keys(params).map(function(k){
+      return encodeURIComponent(k)+'='+encodeURIComponent(
+        typeof params[k]==='object' ? JSON.stringify(params[k]) : params[k]
+      );
+    }).join('&')
   })
   .then(function(res) { return res.json(); })
   .then(function(data) { if(callback) callback(data); })
@@ -296,8 +300,8 @@ function loadDateData(idx) {
         if(m){if(drinkKeys.test(m[1]))drinks+=parseInt(m[2]);else if(foodKeys.test(m[1]))foods+=parseInt(m[2]);}
       });
     });
-    document.getElementById('stat-drinks').textContent = drinks||'0';
-    document.getElementById('stat-food').textContent = foods||'0';
+    var sd=document.getElementById('stat-drinks'); if(sd) sd.textContent = drinks||'0';
+    var sf=document.getElementById('stat-food'); if(sf) sf.textContent = foods||'0';
 
     var list = document.getElementById('admin-res-list');
     document.getElementById('admin-date-label').textContent = dateStr+' 預約清單（'+active.length+' 筆）';
@@ -327,7 +331,7 @@ function loadDateData(idx) {
       }).join('');
     }
 
-    renderSupply(reservations);
+    renderSupply(reservations, res.categorized || null);
     renderHistory(reservations);
   });
 }
@@ -342,45 +346,52 @@ function cancelRes(orderId) {
   });
 }
 
-function renderSupply(reservations) {
-  var drinkKeys=/咖啡|拿鐵|美式|濃縮|冰滴|茶|蔬果汁|阿芙/;
-  var foodKeys=/三明治|泡麵/;
-  var energyKeys=/能量球/;
-  var snackKeys=/爆米花|粥|湯|芝麻|冰淇淋|雪酪/;
-  var catLabels={drink:'☕ 飲品',food:'🥪 餐點',energy:'⚡ 能量球',snack:'🍿 點心'};
+function renderSupply(reservations, categorized) {
+  var catLabels={coffee:'☕ 飲品',tea:'☕ 飲品',food:'🥪 餐點',energy:'⚡ 能量球',snack:'🍿 點心',other:'其他'};
+  var catDisplay={coffee:'☕ 飲品',tea:'🍵 花草茶',food:'🥪 餐點',energy:'⚡ 能量球',snack:'🍿 點心',other:'其他'};
   var slots={am:{label:'下午場 13:00–17:00',res:[]},pm:{label:'晚上場 17:00–21:00',res:[]}};
   reservations.forEach(function(r){
     if(r.status==='已取消') return;
     var h=parseInt((r.time||'0').split(':')[0]);
     if(h<17) slots.am.res.push(r); else slots.pm.res.push(r);
   });
-  function tally(list){
-    var cats={drink:{},food:{},energy:{},snack:{}};
+
+  function tallySlot(list){
+    var cats={};
     list.forEach(function(r){
       String(r.orders||'').split(',').forEach(function(o){
         var m=o.trim().match(/^(.+?)×(\d+)$/); if(!m) return;
         var name=m[1].trim(), qty=parseInt(m[2]);
-        var cat=drinkKeys.test(name)?'drink':foodKeys.test(name)?'food':energyKeys.test(name)?'energy':snackKeys.test(name)?'snack':null;
-        if(cat) cats[cat][name]=(cats[cat][name]||0)+qty;
+        // Use categorized data from backend if available
+        var cat = 'other';
+        if (categorized) {
+          Object.keys(categorized).forEach(function(c){
+            categorized[c].forEach(function(item){ if(item.name===name) cat=c; });
+          });
+        }
+        if(!cats[cat]) cats[cat]=[];
+        var existing = cats[cat].find(function(i){return i.name===name;});
+        if(existing) existing.qty+=qty; else cats[cat].push({name:name,qty:qty});
       });
     });
     return cats;
   }
+
   var html='';
   ['am','pm'].forEach(function(slot){
-    var s=slots[slot], cats=tally(s.res);
-    var hasAny=Object.values(cats).some(function(c){return Object.keys(c).length>0;});
+    var s=slots[slot], cats=tallySlot(s.res);
+    var hasAny=Object.keys(cats).length>0;
     html+='<div style="margin-bottom:20px;">';
     html+='<div style="font-size:13px;font-weight:500;color:var(--dark);margin-bottom:10px;padding:6px 12px;background:var(--gold-pale);border-radius:6px;">'+s.label+'（'+s.res.length+' 桌）</div>';
     if(!hasAny){ html+='<div style="font-size:12px;color:var(--soft);padding:0 4px;">無需備料</div>'; }
     else {
-      Object.keys(catLabels).forEach(function(cat){
-        var items=cats[cat]; if(Object.keys(items).length===0) return;
+      Object.keys(cats).forEach(function(cat){
+        var items=cats[cat]; if(!items||items.length===0) return;
         html+='<div style="margin-bottom:8px;">';
-        html+='<div style="font-size:11px;color:var(--soft);margin-bottom:4px;">'+catLabels[cat]+'</div>';
+        html+='<div style="font-size:11px;color:var(--soft);margin-bottom:4px;">'+(catDisplay[cat]||cat)+'</div>';
         html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
-        Object.entries(items).forEach(function(e){
-          html+='<div class="supply-item" style="padding:10px;"><div class="s-name">'+e[0]+'</div><div><span class="s-qty">'+e[1]+'</span><span class="s-unit2">份</span></div></div>';
+        items.forEach(function(item){
+          html+='<div class="supply-item" style="padding:10px;"><div class="s-name">'+item.name+'</div><div><span class="s-qty">'+item.qty+'</span><span class="s-unit2">份</span></div></div>';
         });
         html+='</div></div>';
       });
@@ -389,6 +400,7 @@ function renderSupply(reservations) {
   });
   document.getElementById('supply-grid').innerHTML=html;
 }
+
 
 function renderHistory(rows) {
   var tbody=document.getElementById('history-tbody');

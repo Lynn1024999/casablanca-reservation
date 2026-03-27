@@ -999,17 +999,25 @@ var state = {
 
 function showLoading(msg) {
   var el = document.getElementById('loading-bar');
+  if (!el) return;
   el.textContent = msg || '處理中…'; el.style.display = 'block';
 }
-function hideLoading() { document.getElementById('loading-bar').style.display = 'none'; }
+function hideLoading() {
+  var el = document.getElementById('loading-bar');
+  if (el) el.style.display = 'none';
+}
 
 function api(action, params, callback) {
   params = params || {};
   params.action = action;
   fetch(GAS_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(params)
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: Object.keys(params).map(function(k){
+      return encodeURIComponent(k)+'='+encodeURIComponent(
+        typeof params[k]==='object' ? JSON.stringify(params[k]) : params[k]
+      );
+    }).join('&')
   })
   .then(function(res) { return res.json(); })
   .then(function(data) { if(callback) callback(data); })
@@ -1019,8 +1027,8 @@ function api(action, params, callback) {
 function apiPost(action, body) {
   return fetch(GAS_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: action, body: JSON.stringify(body) })
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'action='+encodeURIComponent(action)+'&body='+encodeURIComponent(JSON.stringify(body))
   }).then(function(res) { return res.json(); });
 }
 
@@ -1252,6 +1260,8 @@ function buildConfirmDetail() {
 }
 
 function submitReservation() {
+  var submitBtn = document.querySelector('button[onclick="submitReservation()"]');
+  if (submitBtn) submitBtn.disabled = true;
   var notes=document.getElementById('notes-input').value;
   var cartArr=Object.values(state.cart).map(function(v){return{name:v.name,qty:v.qty,price:v.price};});
   var total=0; cartArr.forEach(function(v){total+=v.price*v.qty;});
@@ -1275,7 +1285,7 @@ function submitReservation() {
       '<div class="confirm-row"><span class="label">人數</span><span class="value">'+body.pax+' 位</span></div>'+
       '<div class="confirm-row"><span class="label">預估金額</span><span class="value" style="color:var(--gold);">$'+total+'</span></div>';
     gotoPanel(4);
-  }).catch(function(e){hideLoading();alert('網路錯誤，請稍後再試');});
+  }).catch(function(e){hideLoading();var b=document.querySelector('button[onclick="submitReservation()"]');if(b)b.disabled=false;alert('網路錯誤，請稍後再試');});
 }
 
 function resetForm() {
