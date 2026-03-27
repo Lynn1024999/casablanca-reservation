@@ -206,8 +206,8 @@ const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwkmtjTY17bFra0Q4dX
 
 var adminDates = [], adminDateIdx = 0, allRes = [];
 
-function showLoading(msg){ var el=document.getElementById('loading-bar'); el.textContent=msg||'載入中…'; el.style.display='block'; }
-function hideLoading(){ document.getElementById('loading-bar').style.display='none'; }
+function showLoading(msg){ var el=document.getElementById('global-loading'); if(el){el.textContent=msg||'載入中…'; el.style.display='block';} }
+function hideLoading(){ var el=document.getElementById('global-loading'); if(el) el.style.display='none'; }
 
 function api(action, params, callback) {
   params = params || {}; params.action = action;
