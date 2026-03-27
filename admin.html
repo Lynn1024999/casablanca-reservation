@@ -204,7 +204,7 @@
 <script>
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwkmtjTY17bFra0Q4dX4JGjbVUW4f6G1FPSCNbxttPJH3kD7tjuhxLA34XMF7_qMqtrFA/exec';
 
-var adminDates = [], adminDateIdx = 0, allRes = [];
+var adminDates = [], adminDateIdx = 0, allRes = [], menuCatMap = {};
 
 function showLoading(msg){ try { var el=document.getElementById('global-loading')||document.getElementById('loading-bar'); if(el){el.textContent=msg||'載入中…'; el.style.display='block';} } catch(e){} }
 function hideLoading(){ try { var el=document.getElementById('global-loading')||document.getElementById('loading-bar'); if(el) el.style.display='none'; } catch(e){} }
@@ -251,6 +251,16 @@ function doLogout() { location.reload(); }
 function initAdmin() {
   api('getConfig', {}, function(res) {
     buildAdminDates(res.success ? res.config : {});
+  });
+  // 載入菜單分類對應表
+  api('getMenu', {}, function(res) {
+    if (res.success && res.menu) {
+      Object.keys(res.menu).forEach(function(cat) {
+        res.menu[cat].forEach(function(item) {
+          menuCatMap[item.name] = cat;
+        });
+      });
+    }
   });
 }
 
@@ -331,7 +341,7 @@ function loadDateData(idx) {
       }).join('');
     }
 
-    renderSupply(reservations, res.categorized || null);
+    renderSupply(reservations);
     renderHistory(reservations);
   });
 }
@@ -346,7 +356,7 @@ function cancelRes(orderId) {
   });
 }
 
-function renderSupply(reservations, categorized) {
+function renderSupply(reservations) {
   var catLabels={coffee:'☕ 飲品',tea:'☕ 飲品',food:'🥪 餐點',energy:'⚡ 能量球',snack:'🍿 點心',other:'其他'};
   // coffee 和 tea 合併為「飲料」
   var catMerge={coffee:'drink',tea:'drink',food:'food',energy:'energy',snack:'snack',other:'snack'};
@@ -365,12 +375,7 @@ function renderSupply(reservations, categorized) {
         var m=o.trim().match(/^(.+?)×(\d+)$/); if(!m) return;
         var name=m[1].trim(), qty=parseInt(m[2]);
         // Use categorized data from backend if available
-        var rawCat = 'other';
-        if (categorized) {
-          Object.keys(categorized).forEach(function(c){
-            categorized[c].forEach(function(item){ if(item.name===name) rawCat=c; });
-          });
-        }
+        var rawCat = menuCatMap[name] || 'other';
         var cat = catMerge[rawCat] || 'snack';
         if(!cats[cat]) cats[cat]=[];
         var existing = cats[cat].find(function(i){return i.name===name;});
