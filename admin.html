@@ -201,339 +201,223 @@
 
 </div><!-- /admin-wrap -->
 
-<script type="text/javascript" data-cfasync="false">
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkmtjTY17bFra0Q4dX4JGjbVUW4f6G1FPSCNbxttPJH3kD7tjuhxLA34XMF7_qMqtrFA/exec';
-const API_TOKEN  = 'casablanca_2026_tk';
-// ── 簡易密碼保護（可在此修改密碼）──
-const ADMIN_PASSWORD = 'casablanca2026';
+<script>
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwkmtjTY17bFra0Q4dX4JGjbVUW4f6G1FPSCNbxttPJH3kD7tjuhxLA34XMF7_qMqtrFA/exec';
 
-// ── 登入 ──
-function doLogin() {
-  const pw = document.getElementById('pw-input').value;
-  if (pw === ADMIN_PASSWORD) {
-    sessionStorage.setItem('admin_auth', '1');
-    showAdmin();
-  } else {
-    document.getElementById('login-error').style.display = 'block';
-  }
-}
-function logout() {
-  sessionStorage.removeItem('admin_auth');
-  document.getElementById('admin-section').style.display = 'none';
-  document.getElementById('login-section').style.display = 'block';
-  document.getElementById('logout-btn').style.display = 'none';
-  document.getElementById('pw-input').value = '';
-}
-function showAdmin() {
-  document.getElementById('login-section').style.display = 'none';
-  document.getElementById('admin-section').style.display = 'block';
-  document.getElementById('logout-btn').style.display = 'block';
-  initAdmin();
+var adminDates = [], adminDateIdx = 0, allRes = [];
+
+function showLoading(msg){ var el=document.getElementById('loading-bar'); el.textContent=msg||'載入中…'; el.style.display='block'; }
+function hideLoading(){ document.getElementById('loading-bar').style.display='none'; }
+
+function api(action, params, callback) {
+  params = params || {}; params.action = action;
+  fetch(GAS_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(params)
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) { if(callback) callback(data); })
+  .catch(function(e) { hideLoading(); alert('連線錯誤：' + e.message); });
 }
 
-// ── 啟動 ──
-document.addEventListener('DOMContentLoaded', () => {
-  if (sessionStorage.getItem('admin_auth') === '1') showAdmin();
-  document.getElementById('pw-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('pw-input').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
 });
 
-// ── API（JSONP，繞過 CORS）──
-function api(action, params) {
-  params = params || {};
-  return new Promise(function(resolve, reject) {
-    var cbName = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-    var url = new URL(SCRIPT_URL);
-    url.searchParams.set('action', action);
-    url.searchParams.set('callback', cbName);
-    url.searchParams.set('token', API_TOKEN);
-    Object.keys(params).forEach(function(k) { url.searchParams.set(k, params[k]); });
-
-    var timer = setTimeout(function() {
-      delete window[cbName];
-      reject(new Error('timeout'));
-    }, 15000);
-
-    window[cbName] = function(data) {
-      clearTimeout(timer);
-      delete window[cbName];
-      if (sc && sc.parentNode) sc.parentNode.removeChild(sc);
-      resolve(data);
-    };
-
-    var sc = document.createElement('script');
-    sc.src = url.toString();
-    sc.onerror = function() {
-      clearTimeout(timer);
-      delete window[cbName];
-      reject(new Error('script error'));
-    };
-    document.head.appendChild(sc);
+function doLogin() {
+  var pw = document.getElementById('pw-input').value;
+  api('verifyAdmin', {password: pw}, function(res) {
+    if (res.success) {
+      document.getElementById('login-wrap').style.display = 'none';
+      document.getElementById('admin-wrap-outer').style.display = 'block';
+      initAdmin();
+    } else {
+      document.getElementById('login-error').style.display = 'block';
+      document.getElementById('pw-input').value = '';
+    }
   });
 }
-function showLoading(msg='載入中…') {
-  const el = document.getElementById('global-loading');
-  el.textContent = msg; el.style.display = 'block';
-}
-function hideLoading() { document.getElementById('global-loading').style.display = 'none'; }
 
-// ── 初始化後台 ──
-let adminDates = [];
-let adminDateIdx = 0;
-let allReservations = [];
+function doLogout() { location.reload(); }
 
-async function initAdmin() {
-  showLoading('載入資料…');
-  try {
-    const configRes = await api('getConfig');
-    const config = configRes.success ? configRes.config : {};
-    buildAdminDates(config);
-    await loadMembers();
-  } catch(e) {
-    hideLoading();
-    alert('連線失敗，請確認 Apps Script 已正確部署');
-  }
+function initAdmin() {
+  api('getConfig', {}, function(res) {
+    buildAdminDates(res.success ? res.config : {});
+  });
 }
 
-// ── 日期分頁 ──
 function buildAdminDates(config) {
-  const tabs = document.getElementById('admin-date-tabs');
-  const now  = new Date();
-  const days = ['日','一','二','三','四','五','六'];
-  const openDays = String(config.open_days || '3,4,5').split(',').map(Number);
-  tabs.innerHTML = '';
-  adminDates = [];
-
-  let count = 0;
-  for (let i = 0; i <= 30 && count < 6; i++) {
-    const d = new Date(now);
-    d.setDate(now.getDate() + i);
-    if (!openDays.includes(d.getDay())) continue;
-    const dateStr = `${d.getMonth()+1}/${d.getDate()} （週${days[d.getDay()]}）`;
+  var tabs = document.getElementById('admin-date-tabs');
+  var now = new Date(), days = ['日','一','二','三','四','五','六'];
+  var openDays = String(config.open_days||'3,4,5').split(',').map(Number);
+  tabs.innerHTML = ''; adminDates = [];
+  var count = 0;
+  for (var i=0; i<=30 && count<6; i++) {
+    var d = new Date(now); d.setDate(now.getDate()+i);
+    if (openDays.indexOf(d.getDay())===-1) continue;
+    var dateStr = (d.getMonth()+1)+'/'+d.getDate()+' （週'+days[d.getDay()]+'）';
     adminDates.push(dateStr);
-    const idx = count;
-    const btn = document.createElement('div');
-    btn.className = 'date-tab' + (count === 0 ? ' active' : '');
+    var idx = count;
+    var btn = document.createElement('div');
+    btn.className = 'date-tab'+(count===0?' active':'');
     btn.textContent = dateStr;
-    btn.onclick = () => {
-      document.querySelectorAll('.date-tab').forEach(t => t.classList.remove('active'));
-      btn.classList.add('active');
-      adminDateIdx = idx;
-      loadDateData(idx);
-    };
-    tabs.appendChild(btn);
-    count++;
+    (function(b, i2){ b.onclick = function(){
+      document.querySelectorAll('.date-tab').forEach(function(t){t.classList.remove('active');});
+      b.classList.add('active'); adminDateIdx=i2; loadDateData(i2);
+    }; })(btn, idx);
+    tabs.appendChild(btn); count++;
   }
   if (count > 0) loadDateData(0);
 }
 
-// ── 取消預約 ──
-async function cancelReservation(orderId) {
-  if (!confirm('確定要取消預約 ' + orderId + '？')) return;
-  showLoading('處理中…');
-  try {
-    const res = await api('cancelReservation', { orderId: orderId });
+function loadDateData(idx) {
+  var dateStr = adminDates[idx]; if (!dateStr) return;
+  document.getElementById('admin-date-label').textContent = dateStr+' 預約清單';
+  document.getElementById('supply-date-label').textContent = dateStr;
+  showLoading('載入預約資料…');
+  api('getReservations', {date: dateStr}, function(res) {
     hideLoading();
-    if (res.success) {
-      loadDateData(adminDateIdx);
-    } else {
-      alert('取消失敗：' + (res.error || '請稍後再試'));
-    }
-  } catch(e) {
-    hideLoading();
-    alert('連線錯誤，請稍後再試');
-  }
-}
+    var reservations = res.success ? res.reservations : [];
+    allRes = reservations;
+    var active = reservations.filter(function(r){return r.status!=='已取消';});
+    document.getElementById('stat-res').textContent = active.length;
+    document.getElementById('stat-pax').textContent = active.reduce(function(s,r){return s+Number(r.pax);},0);
 
-// ── 備料分類分時段 ──
-function renderSupply(reservations) {
-  const drinkKeys  = /咖啡|拿鐵|美式|濃縮|冰滴|茶|蔬果汁|阿芙/;
-  const foodKeys   = /三明治|泡麵/;
-  const energyKeys = /能量球/;
-  const snackKeys  = /爆米花|粥|湯|芝麻|冰淇淋|雪酪/;
-
-  const slots = {
-    am: { label: '下午場 13:00–17:00', res: [] },
-    pm: { label: '晚上場 17:00–21:00', res: [] }
-  };
-  reservations.forEach(function(r) {
-    if (r.status === '已取消') return;
-    var h = parseInt((r.time || '0').split(':')[0]);
-    if (h < 17) slots.am.res.push(r); else slots.pm.res.push(r);
-  });
-
-  function tally(resList) {
-    var cats = { drink: {}, food: {}, energy: {}, snack: {} };
-    resList.forEach(function(r) {
-      String(r.orders || '').split(',').forEach(function(o) {
-        var m = o.trim().match(/^(.+?)×(\d+)$/);
-        if (!m) return;
-        var name = m[1].trim(), qty = parseInt(m[2]);
-        var cat = drinkKeys.test(name) ? 'drink' : foodKeys.test(name) ? 'food' : energyKeys.test(name) ? 'energy' : snackKeys.test(name) ? 'snack' : null;
-        if (cat) cats[cat][name] = (cats[cat][name] || 0) + qty;
+    var drinkKeys=/咖啡|拿鐵|美式|濃縮|冰滴|茶|蔬果汁|阿芙/;
+    var foodKeys=/三明治|泡麵|能量|爆米花|粥|湯|芝麻|冰淇淋|雪酪/;
+    var drinks=0, foods=0;
+    active.forEach(function(r){
+      String(r.orders||'').split(',').forEach(function(o){
+        var m=o.trim().match(/^(.+?)×(\d+)$/);
+        if(m){if(drinkKeys.test(m[1]))drinks+=parseInt(m[2]);else if(foodKeys.test(m[1]))foods+=parseInt(m[2]);}
       });
     });
-    return cats;
-  }
+    document.getElementById('stat-drinks').textContent = drinks||'0';
+    document.getElementById('stat-food').textContent = foods||'0';
 
-  var catLabels = { drink: '☕ 飲品', food: '🥪 餐點', energy: '⚡ 能量球', snack: '🍿 點心' };
-  var html = '';
-
-  ['am','pm'].forEach(function(slot) {
-    var s = slots[slot];
-    var cats = tally(s.res);
-    var hasAny = Object.values(cats).some(function(c) { return Object.keys(c).length > 0; });
-    html += '<div style="margin-bottom:20px;">';
-    html += '<div style="font-size:13px;font-weight:500;color:var(--dark);margin-bottom:10px;padding:6px 12px;background:var(--gold-pale);border-radius:6px;">' + s.label + '（' + s.res.length + ' 桌）</div>';
-    if (!hasAny) {
-      html += '<div style="font-size:12px;color:var(--soft);padding:0 4px;">無需備料</div>';
-    } else {
-      Object.keys(catLabels).forEach(function(cat) {
-        var items = cats[cat];
-        if (Object.keys(items).length === 0) return;
-        html += '<div style="margin-bottom:8px;">';
-        html += '<div style="font-size:11px;color:var(--soft);margin-bottom:4px;">' + catLabels[cat] + '</div>';
-        html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
-        Object.entries(items).forEach(function(entry) {
-          html += '<div class="supply-item" style="padding:10px;">';
-          html += '<div class="s-name">' + entry[0] + '</div>';
-          html += '<div><span class="s-qty">' + entry[1] + '</span><span class="s-unit2">份</span></div>';
-          html += '</div>';
-        });
-        html += '</div></div>';
-      });
-    }
-    html += '</div>';
-  });
-
-  document.getElementById('supply-grid').innerHTML = html;
-}
-
-// ── 載入指定日期資料 ──
-async function loadDateData(idx) {
-  const dateStr = adminDates[idx];
-  if (!dateStr) return;
-  document.getElementById('admin-date-label').textContent = dateStr + ' 預約清單';
-  document.getElementById('supply-date-label').textContent = dateStr;
-
-  showLoading('載入預約資料…');
-  try {
-    const resResult = await api('getReservations', { date: dateStr });
-    hideLoading();
-
-    const res = resResult.success ? resResult.reservations : [];
-    allReservations = res;
-    const activeRes = res.filter(function(r) { return r.status !== '已取消'; });
-    const totalPax = activeRes.reduce(function(s,r) { return s + Number(r.pax); }, 0);
-    document.getElementById('stat-res').textContent  = activeRes.length;
-    document.getElementById('stat-pax').textContent  = totalPax;
-
-    // 預約清單
-    const list = document.getElementById('admin-res-list');
-    document.getElementById('admin-date-label').textContent = dateStr + ' 預約清單（' + activeRes.length + ' 筆）';
-    if (res.length === 0) {
+    var list = document.getElementById('admin-res-list');
+    document.getElementById('admin-date-label').textContent = dateStr+' 預約清單（'+active.length+' 筆）';
+    if (reservations.length===0) {
       list.innerHTML = '<div style="text-align:center;color:var(--soft);padding:30px;background:white;border-radius:10px;">本日暫無預約</div>';
     } else {
-      list.innerHTML = res.map(function(r) {
-        var isCancelled = r.status === '已取消';
-        var cardStyle = isCancelled ? 'opacity:.45;text-decoration:line-through;' : '';
-        return '<div class="res-card" style="' + cardStyle + '">' +
-          '<div class="res-time">' + r.time + '<span class="period">入座</span></div>' +
-          '<div class="res-divider"></div>' +
-          '<div class="res-info">' +
-            '<div class="res-name">' + r.name + ' <span class="tag tag-gold">會員</span>' +
-            (isCancelled ? ' <span style="font-size:11px;color:var(--danger);background:#fde8e8;padding:2px 6px;border-radius:4px;">已取消</span>' : '') +
-            '</div>' +
-            '<div class="res-meta">' + r.pax + ' 位</div>' +
-            '<div class="res-orders">📋 ' + (r.orders || '未選餐飲') + '</div>' +
-            (r.notes ? '<div style="font-size:11px;color:var(--danger);margin-top:3px;">💬 ' + r.notes + '</div>' : '') +
-          '</div>' +
-          '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">' +
-            '<div class="pax-circle">' + r.pax + '</div>' +
-            '<div class="pax-text">人</div>' +
-            (!isCancelled ? '<button onclick="cancelReservation(\'' + r.orderId + '\')" style="font-size:11px;padding:3px 8px;border:1px solid var(--danger);background:white;color:var(--danger);border-radius:4px;cursor:pointer;">取消</button>' : '') +
-          '</div>' +
+      list.innerHTML = reservations.map(function(r) {
+        var cancelled = r.status==='已取消';
+        var cs = cancelled ? 'opacity:.45;text-decoration:line-through;' : '';
+        return '<div class="res-card" style="'+cs+'">'+
+          '<div class="res-time">'+r.time+'<span class="period">入座</span></div>'+
+          '<div class="res-divider"></div>'+
+          '<div class="res-info">'+
+            '<div class="res-name">'+r.name+' <span class="tag tag-gold">會員</span>'+
+            (cancelled?'<span style="font-size:11px;color:var(--danger);background:#fde8e8;padding:2px 6px;border-radius:4px;margin-left:4px;">已取消</span>':'')+
+            '</div>'+
+            '<div class="res-meta">'+r.pax+' 位</div>'+
+            '<div class="res-orders">📋 '+(r.orders||'未選餐飲')+'</div>'+
+            (r.notes?'<div style="font-size:11px;color:var(--danger);margin-top:3px;">💬 '+r.notes+'</div>':'')+
+          '</div>'+
+          '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">'+
+            '<div class="pax-circle">'+r.pax+'</div>'+
+            '<div style="font-size:10px;color:var(--soft);">人</div>'+
+            (!cancelled?'<button data-orderid="'+r.orderId+'" onclick="cancelRes(this.dataset.orderid)" style="font-size:11px;padding:3px 8px;border:1px solid var(--danger);background:white;color:var(--danger);border-radius:4px;cursor:pointer;">取消</button>':'')+
+          '</div>'+
         '</div>';
       }).join('');
     }
 
-    // 備料（分時段分類）
-    renderSupply(res);
-
-    // 歷史
-    renderHistory(res);
-  } catch(e) {
-    hideLoading();
-    alert('載入失敗');
-  }
+    renderSupply(reservations);
+    renderHistory(reservations);
+  });
 }
 
-// ── 會員名單 ──
-async function loadMembers() {
-  try {
-    const res = await api('getMembers');
-    const grid = document.getElementById('member-grid');
-    document.getElementById('stat-members').textContent = res.members ? res.members.length : '—';
+function cancelRes(orderId) {
+  if (!confirm('確定要取消預約 '+orderId+'？')) return;
+  showLoading('處理中…');
+  api('cancelReservation', {orderId: orderId}, function(res) {
+    hideLoading();
+    if (res.success) loadDateData(adminDateIdx);
+    else alert('取消失敗：'+(res.error||'請稍後再試'));
+  });
+}
 
-    if (!res.success || !res.members || res.members.length === 0) {
-      grid.innerHTML = '<div style="color:var(--soft);font-size:13px;grid-column:1/-1;">無會員資料，請至 Google Sheets「會員名單」工作表新增</div>';
-      return;
-    }
-    grid.innerHTML = res.members.map(m => `
-      <div class="member-card">
-        <div class="member-avatar">${m.name[0]}</div>
-        <div>
-          <div class="member-name">${m.name}</div>
-          <div class="member-org">${m.org || ''}</div>
-          <div class="member-contact">${m.phone || ''} ${m.email ? '· '+m.email : ''}</div>
-        </div>
-      </div>`).join('');
-  } catch(e) {
-    document.getElementById('member-grid').innerHTML = '<div style="color:var(--soft);font-size:13px;grid-column:1/-1;">無法載入會員資料</div>';
+function renderSupply(reservations) {
+  var drinkKeys=/咖啡|拿鐵|美式|濃縮|冰滴|茶|蔬果汁|阿芙/;
+  var foodKeys=/三明治|泡麵/;
+  var energyKeys=/能量球/;
+  var snackKeys=/爆米花|粥|湯|芝麻|冰淇淋|雪酪/;
+  var catLabels={drink:'☕ 飲品',food:'🥪 餐點',energy:'⚡ 能量球',snack:'🍿 點心'};
+  var slots={am:{label:'下午場 13:00–17:00',res:[]},pm:{label:'晚上場 17:00–21:00',res:[]}};
+  reservations.forEach(function(r){
+    if(r.status==='已取消') return;
+    var h=parseInt((r.time||'0').split(':')[0]);
+    if(h<17) slots.am.res.push(r); else slots.pm.res.push(r);
+  });
+  function tally(list){
+    var cats={drink:{},food:{},energy:{},snack:{}};
+    list.forEach(function(r){
+      String(r.orders||'').split(',').forEach(function(o){
+        var m=o.trim().match(/^(.+?)×(\d+)$/); if(!m) return;
+        var name=m[1].trim(), qty=parseInt(m[2]);
+        var cat=drinkKeys.test(name)?'drink':foodKeys.test(name)?'food':energyKeys.test(name)?'energy':snackKeys.test(name)?'snack':null;
+        if(cat) cats[cat][name]=(cats[cat][name]||0)+qty;
+      });
+    });
+    return cats;
   }
+  var html='';
+  ['am','pm'].forEach(function(slot){
+    var s=slots[slot], cats=tally(s.res);
+    var hasAny=Object.values(cats).some(function(c){return Object.keys(c).length>0;});
+    html+='<div style="margin-bottom:20px;">';
+    html+='<div style="font-size:13px;font-weight:500;color:var(--dark);margin-bottom:10px;padding:6px 12px;background:var(--gold-pale);border-radius:6px;">'+s.label+'（'+s.res.length+' 桌）</div>';
+    if(!hasAny){ html+='<div style="font-size:12px;color:var(--soft);padding:0 4px;">無需備料</div>'; }
+    else {
+      Object.keys(catLabels).forEach(function(cat){
+        var items=cats[cat]; if(Object.keys(items).length===0) return;
+        html+='<div style="margin-bottom:8px;">';
+        html+='<div style="font-size:11px;color:var(--soft);margin-bottom:4px;">'+catLabels[cat]+'</div>';
+        html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
+        Object.entries(items).forEach(function(e){
+          html+='<div class="supply-item" style="padding:10px;"><div class="s-name">'+e[0]+'</div><div><span class="s-qty">'+e[1]+'</span><span class="s-unit2">份</span></div></div>';
+        });
+        html+='</div></div>';
+      });
+    }
+    html+='</div>';
+  });
+  document.getElementById('supply-grid').innerHTML=html;
 }
 
 function renderHistory(rows) {
-  const tbody = document.getElementById('history-tbody');
-  const total = rows ? rows.length : 0;
-  if (document.getElementById('stat-total')) document.getElementById('stat-total').textContent = total;
-  if (!rows || rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--soft);padding:20px;">暫無資料</td></tr>';
+  var tbody=document.getElementById('history-tbody');
+  if(!rows||rows.length===0){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--soft);padding:20px;">暫無資料</td></tr>';
     return;
   }
-  tbody.innerHTML = rows.map(function(r) {
-    var isCancelled = r.status === '已取消';
-    var rowStyle = isCancelled ? 'style="opacity:.5;text-decoration:line-through;"' : '';
-    var tagStyle = isCancelled ? 'style="background:#fde8e8;color:var(--danger);"' : '';
-    return '<tr ' + rowStyle + '>' +
-      '<td><strong>' + (r.name || '—') + '</strong></td>' +
-      '<td>' + (r.date || adminDates[adminDateIdx] || '—') + '</td>' +
-      '<td>' + (r.time || '—') + '</td>' +
-      '<td>' + (r.pax || '—') + '</td>' +
-      '<td style="font-size:12px;">' + (r.orders || '—') + '</td>' +
-      '<td><span class="tag tag-gold" ' + tagStyle + '>' + (r.status || '待確認') + '</span></td>' +
-      '</tr>';
+  tbody.innerHTML=rows.map(function(r){
+    var cancelled=r.status==='已取消';
+    var rs=cancelled?'style="opacity:.5;text-decoration:line-through;"':'';
+    var ts=cancelled?'style="background:#fde8e8;color:var(--danger);"':'';
+    return '<tr '+rs+'>'+
+      '<td><strong>'+(r.name||'—')+'</strong></td>'+
+      '<td>'+(r.date||adminDates[adminDateIdx]||'—')+'</td>'+
+      '<td>'+(r.time||'—')+'</td>'+
+      '<td>'+(r.pax||'—')+'</td>'+
+      '<td style="font-size:12px;">'+(r.orders||'—')+'</td>'+
+      '<td><span class="tag tag-gold" '+ts+'>'+(r.status||'待確認')+'</span></td>'+
+    '</tr>';
   }).join('');
 }
 
-async function exportCSV() {
-  showLoading('準備匯出…');
-  const dateStr = adminDates[adminDateIdx] || '';
-  const res = await api('getReservations', { date: dateStr });
-  hideLoading();
-  const rows = [['預約編號','預約日期','時段','姓名','Email','電話','人數','點餐內容','預估金額','備註','狀態']];
-  (res.reservations || []).forEach(r => {
-    rows.push([r.orderId, r.date, r.time, r.name, r.email||'', r.phone||'', r.pax, r.orders, r.total, r.notes, r.status]);
+function exportCSV() {
+  var rows=[['預約日期','時段','姓名','人數','點餐內容','備註','狀態']];
+  allRes.forEach(function(r){
+    rows.push([r.date||adminDates[adminDateIdx],r.time,r.name,r.pax,r.orders,r.notes,r.status]);
   });
-  const csv  = rows.map(r => r.map(c => '"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
-  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
-  const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = '卡薩布蘭加預約清單.csv';
-  a.click();
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='卡薩布蘭加預約清單.csv'; a.click();
 }
-
 </script>
 </body>
 </html>
