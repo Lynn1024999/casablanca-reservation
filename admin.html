@@ -77,11 +77,7 @@
   .csv-btn:hover { background: var(--mid); }
 
 
-  .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .history-table th { text-align: left; padding: 8px 12px; background: var(--cream); color: var(--soft); font-weight: 400; font-size: 11px; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
-  .history-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--dark); }
-  .history-table tr:last-child td { border-bottom: none; }
-  .history-table tr:hover td { background: var(--cream); }
+
   .tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; }
   .tag-gold { background: var(--gold-pale); color: var(--gold); }
 
@@ -164,21 +160,6 @@
     <span>備料清單（<span id="supply-date-label">—</span>）</span>
   </div>
   <div class="supply-grid" id="supply-grid"></div>
-
-  <div class="section-divider"></div>
-
-  <!-- 歷史紀錄 -->
-  <div class="section-title"><span>當日預約紀錄</span></div>
-  <div style="background:white;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);">
-    <table class="history-table">
-      <thead>
-        <tr>
-          <th>姓名</th><th>日期</th><th>時段</th><th>人數</th><th>點餐</th><th>狀態</th>
-        </tr>
-      </thead>
-      <tbody id="history-tbody"></tbody>
-    </table>
-  </div>
 
 </div><!-- /admin-wrap -->
 
@@ -269,6 +250,80 @@ function buildAdminDates(config) {
   if (count > 0) loadDateData(0);
 }
 
+// 計算訂單金額（含能量球3倍優惠）
+function calcTotal(orders) {
+  if (!orders) return 0;
+  var total = 0;
+
+  // 能量球定義：名稱 -> {單價, 3個價}
+  var energyBalls = {
+    '經典紓壓能量球':         { single: 75, triple: 190 },
+    '花生燕麥能量球':         { single: 60, triple: 145 },
+    '堅果巧克力能量球':       { single: 60, triple: 145 }
+  };
+  // 低價能量球（60元類）可混搭：統計總數後一起算
+  var mixBalls = ['花生燕麥能量球', '堅果巧克力能量球'];
+  var mixBallTotal = 0;
+
+  var items = [];
+  orders.split(',').forEach(function(o) {
+    var m = o.trim().match(/^(.+?)×(\d+)$/);
+    if (!m) return;
+    items.push({ name: m[1].trim(), qty: parseInt(m[2]) });
+  });
+
+  items.forEach(function(item) {
+    var name = item.name, qty = item.qty;
+
+    if (name === '經典紓壓能量球') {
+      // 獨立計算：每3個用190，剩餘用75
+      var sets = Math.floor(qty / 3);
+      var rem  = qty % 3;
+      total += sets * 190 + rem * 75;
+    } else if (mixBalls.indexOf(name) !== -1) {
+      // 混搭計算：累計數量
+      mixBallTotal += qty;
+    } else {
+      // 一般品項：從菜單取價格
+      var price = 0;
+      Object.keys(menuCatMap).length; // ensure map loaded
+      // Try to find price from orders string (GAS returns price in orders? No - use hardcoded fallback)
+      // We'll rely on the menu data loaded in menuCatMap
+      // But menuCatMap only has cat, not price - so use a simple price lookup
+      price = getItemPrice(name);
+      total += price * qty;
+    }
+  });
+
+  // 計算混搭能量球（60元類）
+  if (mixBallTotal > 0) {
+    var sets = Math.floor(mixBallTotal / 3);
+    var rem  = mixBallTotal % 3;
+    total += sets * 145 + rem * 60;
+  }
+
+  return total;
+}
+
+// 品項價格對照（與菜單一致）
+var PRICE_MAP = {
+  '有機冰滴拿鐵（招牌）':250,'有機冰滴咖啡':250,'有機愛爾蘭拿鐵':250,
+  '有機黑糖拿鐵':180,'有機棉花糖拿鐵':180,'有機楓糖拿鐵':180,
+  '有機焦糖拿鐵':180,'有機原味拿鐵':180,'阿芙加朵（冰淇淋+濃縮）':250,
+  '有機美式咖啡':160,'有機義式濃縮咖啡':160,
+  '有機智慧女神茶':180,'有機維納斯美神茶':180,'有機紓壓放鬆茶':180,
+  '有機南非醉茄茶（印度人蔘）':180,'有機北美松葉茶':180,'有機蓮花圓滿茶':180,
+  '有機南非國寶茶':180,'有機日月潭紅玉（台茶18號）':180,
+  '有機英式伯爵茶':140,'有機茉莉綠茶':140,
+  '有機牛蒡養生茶':160,'有機山苦瓜平衡茶':160,
+  '鷹嘴豆蛋沙拉三明治':180,'鮪魚蘋果三明治':180,'家常泡麵（辣）':160,
+  '綠色活氧蔬果汁':190,'紅色元氣蔬果汁':190,
+  '經典爆米花－焦糖奶油':100,'經典爆米花－鹹甜肉桂':100,
+  '紅豆紫米粥（溫熱）':80,'花生杏仁湯（溫熱）':80,
+  '養生芝麻糊（溫熱）':80,'冰淇淋':120,'水果雪酪（限量）':150
+};
+function getItemPrice(name) { return PRICE_MAP[name] || 0; }
+
 function loadDateData(idx) {
   var dateStr = adminDates[idx]; if (!dateStr) return;
   document.getElementById('admin-date-label').textContent = dateStr+' 預約清單';
@@ -311,6 +366,7 @@ function loadDateData(idx) {
             '</div>'+
             '<div class="res-meta">'+r.pax+' 位</div>'+
             '<div class="res-orders">📋 '+(r.orders||'未選餐飲')+'</div>'+
+            '<div style="font-size:12px;color:var(--gold);margin-top:3px;font-weight:500;">💰 預估 $'+calcTotal(r.orders)+'</div>'+
             (r.notes?'<div style="font-size:11px;color:var(--danger);margin-top:3px;">💬 '+r.notes+'</div>':'')+
           '</div>'+
           '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">'+
@@ -323,7 +379,6 @@ function loadDateData(idx) {
     }
 
     renderSupply(reservations);
-    renderHistory(reservations);
   });
 }
 
@@ -390,27 +445,6 @@ function renderSupply(reservations) {
   document.getElementById('supply-grid').innerHTML=html;
 }
 
-
-function renderHistory(rows) {
-  var tbody=document.getElementById('history-tbody');
-  if(!rows||rows.length===0){
-    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--soft);padding:20px;">暫無資料</td></tr>';
-    return;
-  }
-  tbody.innerHTML=rows.map(function(r){
-    var cancelled=r.status==='已取消';
-    var rs=cancelled?'style="opacity:.5;text-decoration:line-through;"':'';
-    var ts=cancelled?'style="background:#fde8e8;color:var(--danger);"':'';
-    return '<tr '+rs+'>'+
-      '<td><strong>'+(r.name||'—')+'</strong></td>'+
-      '<td>'+(r.date||adminDates[adminDateIdx]||'—')+'</td>'+
-      '<td>'+(r.time||'—')+'</td>'+
-      '<td>'+(r.pax||'—')+'</td>'+
-      '<td style="font-size:12px;">'+(r.orders||'—')+'</td>'+
-      '<td><span class="tag tag-gold" '+ts+'>'+(r.status||'待確認')+'</span></td>'+
-    '</tr>';
-  }).join('');
-}
 
 function exportCSV() {
   var rows=[['預約日期','時段','姓名','人數','點餐內容','備註','狀態']];
