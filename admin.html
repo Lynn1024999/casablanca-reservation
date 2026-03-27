@@ -348,7 +348,9 @@ function cancelRes(orderId) {
 
 function renderSupply(reservations, categorized) {
   var catLabels={coffee:'☕ 飲品',tea:'☕ 飲品',food:'🥪 餐點',energy:'⚡ 能量球',snack:'🍿 點心',other:'其他'};
-  var catDisplay={coffee:'☕ 飲品',tea:'🍵 花草茶',food:'🥪 餐點',energy:'⚡ 能量球',snack:'🍿 點心',other:'其他'};
+  // coffee 和 tea 合併為「飲料」
+  var catMerge={coffee:'drink',tea:'drink',food:'food',energy:'energy',snack:'snack',other:'snack'};
+  var catDisplay={drink:'☕ 飲料',food:'🥪 餐點',energy:'⚡ 能量球',snack:'🍿 點心 & 其他'};
   var slots={am:{label:'下午場 13:00–17:00',res:[]},pm:{label:'晚上場 17:00–21:00',res:[]}};
   reservations.forEach(function(r){
     if(r.status==='已取消') return;
@@ -363,12 +365,13 @@ function renderSupply(reservations, categorized) {
         var m=o.trim().match(/^(.+?)×(\d+)$/); if(!m) return;
         var name=m[1].trim(), qty=parseInt(m[2]);
         // Use categorized data from backend if available
-        var cat = 'other';
+        var rawCat = 'other';
         if (categorized) {
           Object.keys(categorized).forEach(function(c){
-            categorized[c].forEach(function(item){ if(item.name===name) cat=c; });
+            categorized[c].forEach(function(item){ if(item.name===name) rawCat=c; });
           });
         }
+        var cat = catMerge[rawCat] || 'snack';
         if(!cats[cat]) cats[cat]=[];
         var existing = cats[cat].find(function(i){return i.name===name;});
         if(existing) existing.qty+=qty; else cats[cat].push({name:name,qty:qty});
@@ -385,7 +388,7 @@ function renderSupply(reservations, categorized) {
     html+='<div style="font-size:13px;font-weight:500;color:var(--dark);margin-bottom:10px;padding:6px 12px;background:var(--gold-pale);border-radius:6px;">'+s.label+'（'+s.res.length+' 桌）</div>';
     if(!hasAny){ html+='<div style="font-size:12px;color:var(--soft);padding:0 4px;">無需備料</div>'; }
     else {
-      Object.keys(cats).forEach(function(cat){
+      ['drink','food','energy','snack'].forEach(function(cat){
         var items=cats[cat]; if(!items||items.length===0) return;
         html+='<div style="margin-bottom:8px;">';
         html+='<div style="font-size:11px;color:var(--soft);margin-bottom:4px;">'+(catDisplay[cat]||cat)+'</div>';
