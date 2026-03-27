@@ -76,14 +76,6 @@
   .csv-btn { padding: 6px 14px; background: var(--dark); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; transition: background .2s; letter-spacing: .5px; }
   .csv-btn:hover { background: var(--mid); }
 
-  /* 會員名單 */
-  .member-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 24px; }
-  @media (max-width:600px) { .member-grid { grid-template-columns: 1fr; } }
-  .member-card { background: white; border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; }
-  .member-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--gold); color: white; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .member-name { font-size: 14px; font-weight: 500; color: var(--dark); }
-  .member-org { font-size: 11px; color: var(--soft); margin-top: 2px; }
-  .member-contact { font-size: 11px; color: var(--mid); margin-top: 2px; }
 
   .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .history-table th { text-align: left; padding: 8px 12px; background: var(--cream); color: var(--soft); font-weight: 400; font-size: 11px; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
@@ -172,17 +164,6 @@
     <span>備料清單（<span id="supply-date-label">—</span>）</span>
   </div>
   <div class="supply-grid" id="supply-grid"></div>
-
-  <div class="section-divider"></div>
-
-  <!-- 會員名單 -->
-  <div class="section-title">
-    <span>會員名單</span>
-    <span style="font-size:12px;color:var(--soft);">資料存於 Google Sheets，可直接在試算表新增/刪除</span>
-  </div>
-  <div class="member-grid" id="member-grid">
-    <div style="color:var(--soft);font-size:13px;grid-column:1/-1;">載入中…</div>
-  </div>
 
   <div class="section-divider"></div>
 
